@@ -1,20 +1,36 @@
+using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI.Table;
 
 public class BoardGrid : MonoBehaviour
 {
     public int rows = 7;
     public int columns = 14;
-    
-    public Cell cellPrefab = null;
+    public TeamsManager teamsManager;
+
+    public Cell  cellPrefab  = null;
+
+    //Cambiar por listas de aliados y enemigos
+    public List<Troop> enemies;
+    public List<Troop> allies;
+
     public Troop troopPrefab = null;
 
     private Cell[,] cells;
     private Cell selectedCell;
 
+    private void Awake()
+    {
+        enemies = teamsManager.equipoEnemigo;
+        allies = teamsManager.equipoAliado;
+    }
     void Start()
     {
+        
         GenerateGrid();
-        SetTestTroop(0, 0);
+        setTrops(allies, enemies);
+        //SetTestTroop(0, 0);
     }
 
     void GenerateGrid()
@@ -42,6 +58,29 @@ public class BoardGrid : MonoBehaviour
         testTroop.MoveToCell(cells[row, col]);
     }
 
+    void setTrops(List<Troop> allies, List<Troop> enemies)
+    {
+        int col_for_allay = 0;
+
+        int col_for_enemies = columns-1;
+        foreach (Troop allay in allies)
+        {
+            Troop testTroop = Instantiate(allay, cells[0, col_for_allay].transform.position, Quaternion.identity);
+            testTroop.transform.SetParent(cells[0, col_for_allay].transform);
+            testTroop.MoveToCell(cells[0, col_for_allay]);
+            testTroop.turnoActtivo = true;
+            col_for_allay++;
+        }
+        
+        foreach (Troop enemy in enemies)
+        {
+            Troop testTroop = Instantiate(enemy, cells[rows-1, col_for_enemies].transform.position, Quaternion.identity);
+            testTroop.transform.SetParent(cells[rows-1, col_for_enemies].transform);
+            testTroop.MoveToCell(cells[rows-1, col_for_enemies]);
+            col_for_enemies--;
+        }
+    }
+
     public void ResetGridActiveSelections()
     {
         for (int row = 0; row < rows; row++) {
@@ -50,7 +89,7 @@ public class BoardGrid : MonoBehaviour
             }
         }
     }
-    public void ActivateSelection(Cell cell)
+    public void ActivateSelection(Cell cell, int movUp, int  movDown, int moveRight, int moveLeft)
     {
         selectedCell = cell;
         Vector2 gridPosition = cell.GetGridPosition();
@@ -64,12 +103,48 @@ public class BoardGrid : MonoBehaviour
                 cells[i, j].SetActiveSelection(true);
             }
         }
-
+        for (int i = 0; i < 4; i++)
+        {
+            switch (i) {
+                case 0:
+                    //Derecha
+                    for (int j = 1; j <= moveRight;  j++)
+                    {
+                        ActivateIfInBounds(x, y + j);
+                    }
+                    break;
+                    //Izquierda
+                case 1:
+                    for (int j = 1; j <= moveLeft; j++)
+                    {
+                        ActivateIfInBounds(x, y - j);
+                    }
+                    break;
+                    //Abajo
+                case 2:
+                    for (int j = 1; j <= movDown; j++)
+                    {
+                        ActivateIfInBounds(x + j, y);
+                    }
+                    break;
+                    //Arriba
+                case 3:
+                    for (int j = 1; j <= movUp; j++)
+                    {
+                        ActivateIfInBounds(x - j, y);
+                    }
+                    break;
+            }
+        }
+        /*
+         * No deja usar un rango
+         * 
         // Activar selección en las celdas adyacentes
-        ActivateIfInBounds(x, y + 1); // Arriba
-        ActivateIfInBounds(x, y - 1); // Abajo
-        ActivateIfInBounds(x + 1, y); // Derecha
-        ActivateIfInBounds(x - 1, y); // Izquierda
+        ActivateIfInBounds(x, y + movUp); // Arriba
+        ActivateIfInBounds(x, y - movDown); // Abajo
+        ActivateIfInBounds(x + moveRight, y); // Derecha
+        ActivateIfInBounds(x - moveLeft, y); // Izquierda
+        */
     }
 
     public void MoveSelectedTroop(Cell destination)

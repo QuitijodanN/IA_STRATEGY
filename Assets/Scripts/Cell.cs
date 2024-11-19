@@ -13,6 +13,15 @@ public class Cell : MonoBehaviour
 
     public Color stateColor = new Color(1f, 1f, 1f, 0f);
 
+    public TurnManager  turnManager;
+    public TeamsManager teamsManager;
+
+    private void Awake()
+    {
+        turnManager = GameObject.Find("GameManager").GetComponent<TurnManager>();
+        teamsManager = GameObject.Find("GameManager").GetComponent<TeamsManager>();
+    }
+
     void Start()
     {
         // Add SpriteRenderer and set up its properties
@@ -55,7 +64,41 @@ public class Cell : MonoBehaviour
             }
             boardGrid.ResetGridActiveSelections();
         } else {
-            boardGrid.ActivateSelection(this);
+
+            /*Ahora las unidades se moverán de forma distinta en función del tipo de tropa
+             * Los atributos de cuanto se puede mover una tropa está en su clase
+             * Es más facil de modificar al no tener que tocar el codigo de movimiento
+             */
+            Troop selectedTroop = this.transform.GetChild(0).GetComponent<Troop>();
+
+            if (selectedTroop.turnoActtivo)
+            {
+                boardGrid.ActivateSelection(this, selectedTroop.movUp, selectedTroop.movDown, selectedTroop.movRight, selectedTroop.movLeft);
+                //Cuando tenga la IA terminada eliminar de aquí la parte del equipo enemigo y quitar acciones de turno aliado
+
+                if (teamsManager.equipoAliado.Contains(selectedTroop))
+                {
+                    Debug.Log("Está en equipo all");
+                    turnManager.numeroJugadasAliadas--;
+                    if(turnManager.numeroJugadasAliadas <= 0)
+                    {
+                        
+                        turnManager.CambiarTurno();
+                    }
+                }
+                else if(teamsManager.equipoEnemigo.Contains(selectedTroop))
+                {
+                    Debug.Log("Está en equipo en");
+                    turnManager.numeroJugadasEnemigas--;
+                    if (turnManager.numeroJugadasEnemigas <= 0)
+                    {
+                        turnManager.CambiarTurno();
+                    }
+                }
+    
+            }
+               
+            
         }
     }
 
