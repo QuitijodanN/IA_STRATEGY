@@ -7,10 +7,6 @@ public class BoardGrid : MonoBehaviour
 {
     public int rows = 7;
     public int columns = 14;
-    public GameObject gameManager;
-
-    
-
     public Cell  cellPrefab  = null;
 
     //Cambiar por listas de aliados y enemigos
@@ -26,11 +22,11 @@ public class BoardGrid : MonoBehaviour
 
     private void Awake()
     {
-        turnManager = gameManager.GetComponent<TurnManager>();
-        teamsManager = gameManager.GetComponent<TeamsManager>();
+        turnManager  = GameObject.Find("GameManager").GetComponent<TurnManager>();
+        teamsManager = GameObject.Find("GameManager").GetComponent<TeamsManager>();
 
         enemies = teamsManager.equipoEnemigo;
-        allies = teamsManager.equipoAliado;
+        allies  = teamsManager.equipoAliado;
     }
     void Start()
     {
@@ -174,7 +170,7 @@ public class BoardGrid : MonoBehaviour
 
                 if (teamsManager.equipoAliado.Contains(selectedTroop))
                 {
-                    Debug.Log("Está en equipo all");
+                   // Debug.Log("Está en equipo all");
                     turnManager.numeroJugadasAliadas--;
                     if (turnManager.numeroJugadasAliadas <= 0)
                     {
@@ -184,7 +180,7 @@ public class BoardGrid : MonoBehaviour
                 }
                 else if (teamsManager.equipoEnemigo.Contains(selectedTroop))
                 {
-                    Debug.Log("Está en equipo en");
+                  //  Debug.Log("Está en equipo en");
                     turnManager.numeroJugadasEnemigas--;
                     if (turnManager.numeroJugadasEnemigas <= 0)
                     {
@@ -197,26 +193,3 @@ public class BoardGrid : MonoBehaviour
         }
     }
 }
-/*
- //Cuando tenga la IA terminada eliminar de aquí la parte del equipo enemigo y quitar acciones de turno aliado
-
-                if (teamsManager.equipoAliado.Contains(selectedTroop))
-                {
-                    Debug.Log("Está en equipo all");
-                    turnManager.numeroJugadasAliadas--;
-                    if(turnManager.numeroJugadasAliadas <= 0)
-                    {
-                        
-                        turnManager.CambiarTurno();
-                    }
-                }
-                else if(teamsManager.equipoEnemigo.Contains(selectedTroop))
-                {
-                    Debug.Log("Está en equipo en");
-                    turnManager.numeroJugadasEnemigas--;
-                    if (turnManager.numeroJugadasEnemigas <= 0)
-                    {
-                        turnManager.CambiarTurno();
-                    }
-                }
- */

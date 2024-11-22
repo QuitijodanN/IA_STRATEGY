@@ -18,7 +18,7 @@ public class Cell : MonoBehaviour
 
     private void Awake()
     {
-        turnManager = GameObject.Find("GameManager").GetComponent<TurnManager>();
+        turnManager  = GameObject.Find("GameManager").GetComponent<TurnManager>();
         teamsManager = GameObject.Find("GameManager").GetComponent<TeamsManager>();
     }
 
@@ -73,11 +73,7 @@ public class Cell : MonoBehaviour
 
             if (selectedTroop.turnoActtivo)
                 boardGrid.ActivateSelection(this, selectedTroop.movUp, selectedTroop.movDown, selectedTroop.movRight, selectedTroop.movLeft);
-                
-    
-            
-               
-            
+
         }
     }
 
