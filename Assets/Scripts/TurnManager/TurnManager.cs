@@ -5,26 +5,30 @@ using UnityEngine.UI;
 public class TurnManager : MonoBehaviour
 {
     public TMP_Text text;
-    
+
     //Cambiar a private cuando termine el test
-    public bool esTuTurno { get; private set; }
+    //public bool esTuTurno { get; private set; }
 
-    public bool eselTurnoEnemigo { get; private set; }
+    //public bool eselTurnoEnemigo { get; private set; }
 
-    public TeamsManager teamsManager;
+    public bool esTuTurno;
+
+    public bool eselTurnoEnemigo;
+
+    private TeamsManager teamsManager;
 
     private int maxNumActionsPerAllyTurn;
     private int maxNumActionsPerEnemyTurn;
 
-    [HideInInspector]
+    //[HideInInspector]
     public int numeroJugadasAliadas;
-    [HideInInspector]
+    //[HideInInspector]
     public int numeroJugadasEnemigas;
 
     private void Awake()
     {
-        maxNumActionsPerAllyTurn  = teamsManager.equipoAliado.Count;
-        maxNumActionsPerEnemyTurn = teamsManager.equipoEnemigo.Count;
+        teamsManager = GetComponent<TeamsManager>();
+        
 
         numeroJugadasAliadas  = maxNumActionsPerAllyTurn;
         numeroJugadasEnemigas = 0;
@@ -34,10 +38,15 @@ public class TurnManager : MonoBehaviour
         
     }
 
+    public void setMaxNumberActionsPerAllyTurn(int plays) { maxNumActionsPerAllyTurn = plays; }
+    public void setMaxNumberActionsPerEnemyTurn(int plays) { maxNumActionsPerEnemyTurn = plays; }
+
     public void CambiarTurno()
-    {
+    {  
         eselTurnoEnemigo = !eselTurnoEnemigo;
-        esTuTurno        = !esTuTurno;
+
+        esTuTurno = !esTuTurno;
+       
 
         if (esTuTurno)
         {

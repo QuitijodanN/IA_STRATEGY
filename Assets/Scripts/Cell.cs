@@ -72,31 +72,10 @@ public class Cell : MonoBehaviour
             Troop selectedTroop = this.transform.GetChild(0).GetComponent<Troop>();
 
             if (selectedTroop.turnoActtivo)
-            {
                 boardGrid.ActivateSelection(this, selectedTroop.movUp, selectedTroop.movDown, selectedTroop.movRight, selectedTroop.movLeft);
-                //Cuando tenga la IA terminada eliminar de aquí la parte del equipo enemigo y quitar acciones de turno aliado
-
-                if (teamsManager.equipoAliado.Contains(selectedTroop))
-                {
-                    Debug.Log("Está en equipo all");
-                    turnManager.numeroJugadasAliadas--;
-                    if(turnManager.numeroJugadasAliadas <= 0)
-                    {
-                        
-                        turnManager.CambiarTurno();
-                    }
-                }
-                else if(teamsManager.equipoEnemigo.Contains(selectedTroop))
-                {
-                    Debug.Log("Está en equipo en");
-                    turnManager.numeroJugadasEnemigas--;
-                    if (turnManager.numeroJugadasEnemigas <= 0)
-                    {
-                        turnManager.CambiarTurno();
-                    }
-                }
+                
     
-            }
+            
                
             
         }

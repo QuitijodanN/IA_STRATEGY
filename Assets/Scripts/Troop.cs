@@ -24,14 +24,6 @@ public class Troop : MonoBehaviour
     public bool turnoActtivo = true;
 
     
-    void Awake()
-    {
-        /*
-        movUp    = 1;
-        movDown  = 1;
-        movLeft  = 1;
-        movRight = 1;*/
-    }
 
     /// <summary>
     /// Mueve a la tropa a la celda destino
@@ -40,6 +32,7 @@ public class Troop : MonoBehaviour
     public void MoveToCell(Cell destination)
     {
         transform.position = destination.transform.position + offset;
+
         turnoActtivo = false;
     }
 

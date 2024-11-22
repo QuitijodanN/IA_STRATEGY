@@ -7,7 +7,9 @@ public class BoardGrid : MonoBehaviour
 {
     public int rows = 7;
     public int columns = 14;
-    public TeamsManager teamsManager;
+    public GameObject gameManager;
+
+    
 
     public Cell  cellPrefab  = null;
 
@@ -19,9 +21,14 @@ public class BoardGrid : MonoBehaviour
 
     private Cell[,] cells;
     private Cell selectedCell;
+    private TurnManager turnManager;
+    private TeamsManager teamsManager;
 
     private void Awake()
     {
+        turnManager = gameManager.GetComponent<TurnManager>();
+        teamsManager = gameManager.GetComponent<TeamsManager>();
+
         enemies = teamsManager.equipoEnemigo;
         allies = teamsManager.equipoAliado;
     }
@@ -63,22 +70,30 @@ public class BoardGrid : MonoBehaviour
         int col_for_allay = 0;
 
         int col_for_enemies = columns-1;
-        foreach (Troop allay in allies)
+        for(int i = 0;i<teamsManager.numberOfAllies;i++) 
         {
-            Troop testTroop = Instantiate(allay, cells[0, col_for_allay].transform.position, Quaternion.identity);
+            Troop testTroop = Instantiate(teamsManager.troopPrefab1, cells[0, col_for_allay].transform.position, Quaternion.identity);
             testTroop.transform.SetParent(cells[0, col_for_allay].transform);
             testTroop.MoveToCell(cells[0, col_for_allay]);
             testTroop.turnoActtivo = true;
             col_for_allay++;
+            allies.Add(testTroop);
         }
-        
-        foreach (Troop enemy in enemies)
+
+        for (int i = 0; i < teamsManager.numberOfEnemies; i++)
         {
-            Troop testTroop = Instantiate(enemy, cells[rows-1, col_for_enemies].transform.position, Quaternion.identity);
+            Troop testTroop = Instantiate(teamsManager.troopPrefab2, cells[rows-1, col_for_enemies].transform.position, Quaternion.identity);
             testTroop.transform.SetParent(cells[rows-1, col_for_enemies].transform);
             testTroop.MoveToCell(cells[rows-1, col_for_enemies]);
             col_for_enemies--;
+            enemies.Add(testTroop);
         }
+
+        turnManager.setMaxNumberActionsPerAllyTurn(teamsManager.numberOfAllies);
+        turnManager.setMaxNumberActionsPerEnemyTurn(teamsManager.numberOfEnemies);
+
+        turnManager.numeroJugadasAliadas = teamsManager.numberOfAllies;
+        turnManager.numeroJugadasEnemigas = 0;
     }
 
     public void ResetGridActiveSelections()
@@ -149,13 +164,59 @@ public class BoardGrid : MonoBehaviour
 
     public void MoveSelectedTroop(Cell destination)
     {
-        if (selectedCell != null) {
+        if (selectedCell != null)
+        {
             Troop selectedTroop = selectedCell.transform.GetChild(0).GetComponent<Troop>();
-            if (selectedTroop != null) {
+            if (selectedTroop != null)
+            {
                 selectedTroop.transform.SetParent(destination.transform);
                 selectedTroop.MoveToCell(destination);
+
+                if (teamsManager.equipoAliado.Contains(selectedTroop))
+                {
+                    Debug.Log("Está en equipo all");
+                    turnManager.numeroJugadasAliadas--;
+                    if (turnManager.numeroJugadasAliadas <= 0)
+                    {
+
+                        turnManager.CambiarTurno();
+                    }
+                }
+                else if (teamsManager.equipoEnemigo.Contains(selectedTroop))
+                {
+                    Debug.Log("Está en equipo en");
+                    turnManager.numeroJugadasEnemigas--;
+                    if (turnManager.numeroJugadasEnemigas <= 0)
+                    {
+                        turnManager.CambiarTurno();
+                    }
+
+                }
+                selectedCell = null;
             }
-            selectedCell = null;
         }
     }
 }
+/*
+ //Cuando tenga la IA terminada eliminar de aquí la parte del equipo enemigo y quitar acciones de turno aliado
+
+                if (teamsManager.equipoAliado.Contains(selectedTroop))
+                {
+                    Debug.Log("Está en equipo all");
+                    turnManager.numeroJugadasAliadas--;
+                    if(turnManager.numeroJugadasAliadas <= 0)
+                    {
+                        
+                        turnManager.CambiarTurno();
+                    }
+                }
+                else if(teamsManager.equipoEnemigo.Contains(selectedTroop))
+                {
+                    Debug.Log("Está en equipo en");
+                    turnManager.numeroJugadasEnemigas--;
+                    if (turnManager.numeroJugadasEnemigas <= 0)
+                    {
+                        turnManager.CambiarTurno();
+                    }
+                }
+ */

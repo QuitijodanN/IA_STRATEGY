@@ -16,11 +16,11 @@ public class TeamsManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Awake()
     {
-        for (int i = 0; i < numberOfAllies; i++)
+      /*  for (int i = 0; i < numberOfAllies; i++)
             equipoAliado.Add(troopPrefab1);
 
         for (int i = 0; i < numberOfEnemies; i++)
-            equipoEnemigo.Add(troopPrefab2);
+            equipoEnemigo.Add(troopPrefab2);*/
     }
 
     public void eliminarEnemigo(Troop enemigo)
