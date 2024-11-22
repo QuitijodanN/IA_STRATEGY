@@ -313,7 +313,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rows: 7
   columns: 14
-  teamsManager: {fileID: 673032017}
+  gameManager: {fileID: 673032015}
   cellPrefab: {fileID: 735537969969923349, guid: 90b99930236f6ad4b86d3950c4d2ae74, type: 3}
   enemies: []
   allies: []
@@ -11702,7 +11702,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   text: {fileID: 730588168}
-  teamsManager: {fileID: 673032017}
+  esTuTurno: 0
+  eselTurnoEnemigo: 0
   numeroJugadasAliadas: 0
   numeroJugadasEnemigas: 0
 --- !u!4 &676946203 stripped
@@ -14544,7 +14545,7 @@ Tilemap:
       - {fileID: 556763482, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
       - {fileID: 326608234, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
       - {fileID: 286949249, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
-      m_AnimationSpeed: 10
+      m_AnimationSpeed: 10.000001
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -8, y: -3, z: 0}
@@ -15422,7 +15423,7 @@ Tilemap:
       - {fileID: 1229074236, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
       - {fileID: 1295264337, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
       - {fileID: -851627011, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -2, y: 5, z: 0}
@@ -19098,7 +19099,7 @@ Tilemap:
       - {fileID: 556763482, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
       - {fileID: 326608234, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
       - {fileID: 286949249, guid: 04f8bc759758365409fb2aa8edb60462, type: 3}
-      m_AnimationSpeed: 10.000001
+      m_AnimationSpeed: 10
       m_AnimationTimeOffset: 0
       m_Flags: 0
   - first: {x: -15, y: -3, z: 0}
