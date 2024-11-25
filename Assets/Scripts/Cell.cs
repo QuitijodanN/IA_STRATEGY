@@ -36,7 +36,7 @@ public class Cell : MonoBehaviour
             spriteRenderer.color = stateColor;
         } else {
             stateColor = new Color(1f, 1f, 1f, 0f);
-            spriteRenderer.color = stateColor + new Color(0f, 0f, 0f, 0.3f);
+            spriteRenderer.color = stateColor;
         }
     }
 
