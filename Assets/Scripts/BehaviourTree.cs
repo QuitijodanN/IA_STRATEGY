@@ -8,6 +8,7 @@ namespace BehaviourTree
     public interface IStrategy
     {
         Node.Status Process();
+    }
 
     public class Leaf : Node
     {
