@@ -1,39 +1,49 @@
-using NUnit.Framework;
-using System.Collections.Generic;
+
+using System.Collections;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI.Table;
 
 public class BoardGrid : MonoBehaviour
 {
     public int rows = 7;
     public int columns = 14;
-    public Cell  cellPrefab  = null;
-
-    //Cambiar por listas de aliados y enemigos
-    public List<Troop> enemies;
-    public List<Troop> allies;
-
-    public Troop troopPrefab = null;
-
+    public Cell cellPrefab  = null;
+    public Cell selectedTroopCell = null;
     private Cell[,] cells;
-    private Cell selectedCell;
-    private TurnManager turnManager;
-    private TeamsManager teamsManager;
+    private GameManager gm;
 
     private void Awake()
     {
-        turnManager  = GameObject.Find("GameManager").GetComponent<TurnManager>();
-        teamsManager = GameObject.Find("GameManager").GetComponent<TeamsManager>();
-
-        enemies = teamsManager.equipoEnemigo;
-        allies  = teamsManager.equipoAliado;
+        gm = GameManager.Instance;
     }
     void Start()
     {
-        
         GenerateGrid();
-        setTrops(allies, enemies);
-        //SetTestTroop(0, 0);
+        StartCoroutine(InitializeTestTroops());
+    }
+
+    private IEnumerator InitializeTestTroops()
+    {
+        // Wait for the end of the frame to ensure all components are loaded and rendered.
+        yield return new WaitForEndOfFrame();
+
+        int col_for_ally = 0;
+        int col_for_enemies = columns - 1;
+
+        for (int i = 0; i < gm.allyTroopPrefabs.Count; i++) {
+            Troop testTroop = Instantiate(gm.allyTroopPrefabs[i], cells[0, col_for_ally].transform.position, Quaternion.identity);
+
+            testTroop.MoveToCell(cells[0, col_for_ally]);
+            PaintPath(cells[0, col_for_ally], cells[0, col_for_ally], Team.Blue);
+            col_for_ally++;
+        }
+
+        for (int i = 0; i < gm.enemyTroopPrefabs.Count; i++) {
+            Troop testTroop = Instantiate(gm.enemyTroopPrefabs[i], cells[rows - 1, col_for_enemies].transform.position, Quaternion.identity);
+
+            testTroop.MoveToCell(cells[rows - 1, col_for_enemies]);
+            PaintPath(cells[rows - 1, col_for_enemies], cells[rows - 1, col_for_enemies], Team.Red);
+            col_for_enemies--;
+        }
     }
 
     void GenerateGrid()
@@ -54,142 +64,135 @@ public class BoardGrid : MonoBehaviour
         }
     }
 
-    void SetTestTroop(int row, int col)
-    {
-        Troop testTroop = Instantiate(troopPrefab, cells[row, col].transform.position, Quaternion.identity);
-        testTroop.transform.SetParent(cells[row, col].transform);
-        testTroop.MoveToCell(cells[row, col]);
-    }
-
-    void setTrops(List<Troop> allies, List<Troop> enemies)
-    {
-        int col_for_allay = 0;
-
-        int col_for_enemies = columns-1;
-        for(int i = 0;i<teamsManager.numberOfAllies;i++) 
-        {
-            Troop testTroop = Instantiate(teamsManager.troopPrefab1, cells[0, col_for_allay].transform.position, Quaternion.identity);
-            testTroop.transform.SetParent(cells[0, col_for_allay].transform);
-            testTroop.MoveToCell(cells[0, col_for_allay]);
-            testTroop.turnoActtivo = true;
-            col_for_allay++;
-            allies.Add(testTroop);
-        }
-
-        for (int i = 0; i < teamsManager.numberOfEnemies; i++)
-        {
-            Troop testTroop = Instantiate(teamsManager.troopPrefab2, cells[rows-1, col_for_enemies].transform.position, Quaternion.identity);
-            testTroop.transform.SetParent(cells[rows-1, col_for_enemies].transform);
-            testTroop.MoveToCell(cells[rows-1, col_for_enemies]);
-            col_for_enemies--;
-            enemies.Add(testTroop);
-        }
-
-        turnManager.setMaxNumberActionsPerAllyTurn(teamsManager.numberOfAllies);
-        turnManager.setMaxNumberActionsPerEnemyTurn(teamsManager.numberOfEnemies);
-
-        turnManager.numeroJugadasAliadas = teamsManager.numberOfAllies;
-        turnManager.numeroJugadasEnemigas = 0;
-    }
-
     public void ResetGridActiveSelections()
     {
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
-                cells[row, col].SetActiveSelection(false);
+                cells[row, col].SetActiveSelection(Selection.Empty);
             }
         }
     }
-    public void ActivateSelection(Cell cell, int movUp, int  movDown, int moveRight, int moveLeft)
+
+    public void ActivateMovementSelection(Cell cell, int movement)
     {
-        selectedCell = cell;
-        Vector2 gridPosition = cell.GetGridPosition();
-        int x = (int)gridPosition.x;
-        int y = (int)gridPosition.y;
+        selectedTroopCell = cell;
+        (int x, int y) gridPosition = cell.GetGridPosition();
+        int x = gridPosition.x;
+        int y = gridPosition.y;
 
         // Función local para activar la selección si está dentro de los límites
-        void ActivateIfInBounds(int i, int j)
+        bool ActivateMovementIfInBounds(int i, int j)
         {
             if (i >= 0 && i < cells.GetLength(0) && j >= 0 && j < cells.GetLength(1)) {
-                cells[i, j].SetActiveSelection(true);
+                if (cells[i, j].transform.childCount > 0) {
+                    return false;
+                }
+                cells[i, j].SetActiveSelection(Selection.Movement);
             }
+            return true;
         }
-        for (int i = 0; i < 4; i++)
+        //Arriba
+        for (int j = 1; j <= movement;  j++)
         {
-            switch (i) {
-                case 0:
-                    //Derecha
-                    for (int j = 1; j <= moveRight;  j++)
-                    {
-                        ActivateIfInBounds(x, y + j);
-                    }
-                    break;
-                    //Izquierda
-                case 1:
-                    for (int j = 1; j <= moveLeft; j++)
-                    {
-                        ActivateIfInBounds(x, y - j);
-                    }
-                    break;
-                    //Abajo
-                case 2:
-                    for (int j = 1; j <= movDown; j++)
-                    {
-                        ActivateIfInBounds(x + j, y);
-                    }
-                    break;
-                    //Arriba
-                case 3:
-                    for (int j = 1; j <= movUp; j++)
-                    {
-                        ActivateIfInBounds(x - j, y);
-                    }
-                    break;
+            if (!ActivateMovementIfInBounds(x, y + j)) break;
+        }
+        //Abajo
+        for (int j = 1; j <= movement; j++)
+        {
+            if (!ActivateMovementIfInBounds(x, y - j)) break;
+        }
+        //Derecha
+        for (int j = 1; j <= movement; j++)
+        {
+            if (!ActivateMovementIfInBounds(x + j, y)) break;
+        }
+        //Izquierda
+        for (int j = 1; j <= movement; j++)
+        {
+            if (!ActivateMovementIfInBounds(x - j, y)) break;
+        }
+    }
+
+    public void ActivateAttackSelection(Cell cell, int range)
+    {
+        void ActivateAttackIfInBounds(int i, int j)
+        {
+            if (i >= 0 && i < cells.GetLength(0) && j >= 0 && j < cells.GetLength(1)) {
+                if (cells[i, j].transform.childCount > 0 && cells[i, j] != cell) {
+                    if (cells[i, j].transform.GetComponentInChildren<Troop>().team != cell.transform.GetComponentInChildren<Troop>().team)
+                        cells[i, j].SetActiveSelection(Selection.Attack);
+                }
             }
         }
-        /*
-         * No deja usar un rango
-         * 
-        // Activar selección en las celdas adyacentes
-        ActivateIfInBounds(x, y + movUp); // Arriba
-        ActivateIfInBounds(x, y - movDown); // Abajo
-        ActivateIfInBounds(x + moveRight, y); // Derecha
-        ActivateIfInBounds(x - moveLeft, y); // Izquierda
-        */
+
+        // Loop through rows and columns within the specified range
+        for (int offsetX = -range; offsetX <= range; offsetX++) {
+            for (int offsetY = -range; offsetY <= range; offsetY++) {
+                int currentX = cell.GetGridPosition().col + offsetX;
+                int currentY = cell.GetGridPosition().row + offsetY;
+
+                ActivateAttackIfInBounds(currentY, currentX);
+            }
+        }
     }
 
     public void MoveSelectedTroop(Cell destination)
     {
-        if (selectedCell != null)
-        {
-            Troop selectedTroop = selectedCell.transform.GetChild(0).GetComponent<Troop>();
-            if (selectedTroop != null)
-            {
+        if (selectedTroopCell != null) {
+            Troop selectedTroop = selectedTroopCell.transform.GetChild(0).GetComponent<Troop>();
+            if (selectedTroop != null) {
+                // Move the troop
                 selectedTroop.transform.SetParent(destination.transform);
                 selectedTroop.MoveToCell(destination);
 
-                if (teamsManager.equipoAliado.Contains(selectedTroop))
-                {
-                   // Debug.Log("Está en equipo all");
-                    turnManager.numeroJugadasAliadas--;
-                    if (turnManager.numeroJugadasAliadas <= 0)
-                    {
-
-                        turnManager.CambiarTurno();
-                    }
-                }
-                else if (teamsManager.equipoEnemigo.Contains(selectedTroop))
-                {
-                  //  Debug.Log("Está en equipo en");
-                    turnManager.numeroJugadasEnemigas--;
-                    if (turnManager.numeroJugadasEnemigas <= 0)
-                    {
-                        turnManager.CambiarTurno();
-                    }
-
-                }
-                selectedCell = null;
+                // Paint the path
+                PaintPath(selectedTroopCell, destination, selectedTroop.team);
+                gm.UseAction();
             }
+            selectedTroopCell = null;
+        }
+    }
+
+    private void PaintPath(Cell start, Cell destination, Team team)
+    {
+        // Assuming cells have coordinates (e.g., start.x, start.y)
+        int startX = start.GetGridPosition().col;
+        int startY = start.GetGridPosition().row;
+        int endX = destination.GetGridPosition().col;
+        int endY = destination.GetGridPosition().row;
+
+        if (startX == endX) // Vertical movement
+        {
+            int minY = Mathf.Min(startY, endY);
+            int maxY = Mathf.Max(startY, endY);
+            for (int y = minY; y <= maxY; y++) {
+                cells[y, startX].SetColorTeam(team);
+            }
+        }
+        else if (startY == endY) // Horizontal movement
+        {
+            int minX = Mathf.Min(startX, endX);
+            int maxX = Mathf.Max(startX, endX);
+            for (int x = minX; x <= maxX; x++) {
+                cells[startY, x].SetColorTeam(team);
+            }
+        }
+        else {
+            Debug.LogError("Troops can only move horizontally or vertically.");
+        }
+    }
+
+    public void AttackWithSelectedTroop(Cell destination)
+    {
+        if (selectedTroopCell != null) {
+            Troop selectedTroop = selectedTroopCell.transform.GetChild(0).GetComponent<Troop>();
+            Troop enemy = destination.transform.GetChild(0).GetComponent<Troop>();
+            if (selectedTroop != null) {
+                //Attack
+                selectedTroop.Attack(enemy);
+                gm.UseAction();
+            }
+            selectedTroopCell = null;
         }
     }
 }

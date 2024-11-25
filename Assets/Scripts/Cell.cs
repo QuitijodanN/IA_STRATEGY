@@ -1,89 +1,144 @@
-
+using UnityEditor;
 using UnityEngine;
 
 public class Cell : MonoBehaviour
 {
     private SpriteRenderer spriteRenderer;
-    
-    private bool isActiveSelection = false;
 
+    private Color stateColor = new Color(0f, 0f, 0f, 0f); // Fully transparent by default
+    private Color hoverColor = new Color(1f, 1f, 1f, 0.3f); // Fully transparent by default
+    private Color teamColor = new Color(0f, 0f, 0f, 0f);  // Fully transparent by default
+    private Color finalColor = new Color(0f, 0f, 0f, 0f);  // Fully transparent result initially
+
+    private Selection activeSelection = Selection.Empty;
+    private Team team = Team.None;
     private BoardGrid boardGrid = null;
-    private float row = 0;
-    private float col = 0;
-
-    public Color stateColor = new Color(1f, 1f, 1f, 0f);
-
-    public TurnManager  turnManager;
-    public TeamsManager teamsManager;
-
-    private void Awake()
-    {
-        turnManager  = GameObject.Find("GameManager").GetComponent<TurnManager>();
-        teamsManager = GameObject.Find("GameManager").GetComponent<TeamsManager>();
-    }
+    private GameManager gm;
+    private int row = 0;
+    private int col = 0;
 
     void Start()
     {
-        // Add SpriteRenderer and set up its properties
+        // Initialize SpriteRenderer
         spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
-        spriteRenderer.color = stateColor;
+        UpdateCellColor();
+        gm = GameManager.Instance;
     }
 
-    public void SetGridPosition(BoardGrid board, float row, float col)
+    public void SetGridPosition(BoardGrid board, int row, int col)
     {
         boardGrid = board;
         this.row = row;
         this.col = col;
     }
 
-
-    public void SetActiveSelection(bool isActive)
+    public void SetActiveSelection(Selection s)
     {
-        isActiveSelection = isActive;
-        if (isActive ) {
-            stateColor = new Color(0f, 1f, 1f, 0.3f);
-            spriteRenderer.color = stateColor;
-        } else {
-            stateColor = new Color(1f, 1f, 1f, 0f);
-            spriteRenderer.color = stateColor + new Color(0f, 0f, 0f, 0.3f);
+        activeSelection = s;
+
+        switch (s) {
+            case Selection.Movement:
+                stateColor = new Color(0f, 1f, 1f, 0.5f); // Cyan tint with transparency
+                break;
+            case Selection.Attack:
+                stateColor = new Color(1f, 0f, 0f, 0.5f); // Red tint with transparency
+                break;
+            default:
+                stateColor = new Color(0f, 0f, 0f, 0f); // Reset to transparent
+                break;
         }
+
+        UpdateCellColor();
     }
 
-    public Vector2 GetGridPosition()
+    public void SetColorTeam(Team t)
     {
-        return new Vector2(row, col);
+        team = t;
+
+        switch (t) {
+            case Team.Blue:
+                teamColor = new Color(0f, 0f, 1f, 0.3f); // Blue tint with lower transparency
+                break;
+            case Team.Red:
+                teamColor = new Color(1f, 0.3f, 0f, 0.3f); // Orange tint with lower transparency
+                break;
+            default:
+                teamColor = new Color(0f, 0f, 0f, 0f); // Reset to transparent
+                break;
+        }
+
+        UpdateCellColor();
+    }
+
+    public (int row, int col) GetGridPosition()
+    {
+        return (row, col);
+    }
+
+    // Updates the cell's color based on the current team and state
+    private void UpdateCellColor()
+    {
+        finalColor = BlendColors(teamColor, stateColor);
+        spriteRenderer.color = finalColor;
+    }
+
+    // Blends two colors with transparency, similar to how tinted glass layers would appear
+    private Color BlendColors(Color baseColor, Color overlayColor)
+    {
+        float alphaBase = baseColor.a;
+        float alphaOverlay = overlayColor.a;
+
+        // Compute final alpha using Porter-Duff "source-over" formula
+        float finalAlpha = alphaOverlay + alphaBase * (1 - alphaOverlay);
+
+        if (finalAlpha <= 0) return new Color(0, 0, 0, 0); // Fully transparent if alpha is zero
+
+        // Blend RGB channels using alpha weighting
+        float r = (overlayColor.r * alphaOverlay + baseColor.r * alphaBase * (1 - alphaOverlay)) / finalAlpha;
+        float g = (overlayColor.g * alphaOverlay + baseColor.g * alphaBase * (1 - alphaOverlay)) / finalAlpha;
+        float b = (overlayColor.b * alphaOverlay + baseColor.b * alphaBase * (1 - alphaOverlay)) / finalAlpha;
+
+        return new Color(r, g, b, finalAlpha);
     }
 
     void OnMouseDown()
     {
-        
-        // Change to hover color if the cell is available
+        // Cuando clicas en una celda sin tropas (vacía)
         if (transform.childCount == 0) {
-            if (isActiveSelection) {
+            // Cuando clicas sobre una selección de movimiento (exclusivo de celdas vacías)
+            if (activeSelection == Selection.Movement) {
                 boardGrid.MoveSelectedTroop(this);
             }
             boardGrid.ResetGridActiveSelections();
-        } else {
-
-            /*Ahora las unidades se moverán de forma distinta en función del tipo de tropa
-             * Los atributos de cuanto se puede mover una tropa está en su clase
-             * Es más facil de modificar al no tener que tocar el codigo de movimiento
-             */
-            Troop selectedTroop = this.transform.GetChild(0).GetComponent<Troop>();
-
-            if (selectedTroop.turnoActtivo)
-                boardGrid.ActivateSelection(this, selectedTroop.movUp, selectedTroop.movDown, selectedTroop.movRight, selectedTroop.movLeft);
-
+        }
+        // Cuando clicas sobre una tropa
+        else {
+            // Cuando clicas sobre una tropa a la que atacar
+            if (activeSelection == Selection.Attack) {
+                boardGrid.AttackWithSelectedTroop(this);
+                boardGrid.ResetGridActiveSelections();
+            }
+            // Cuando clicas sobre una tropa que quieres usar para mover o atacar
+            else {
+                boardGrid.ResetGridActiveSelections();
+                Troop selectedTroop = transform.GetChild(0).GetComponent<Troop>();
+                // Solo seleccionables las tropas del turno correspondiente
+                if (gm.yourTurn && selectedTroop.team == Team.Blue || !gm.yourTurn && selectedTroop.team == Team.Red) {
+                    boardGrid.ActivateMovementSelection(this, selectedTroop.moveRange);
+                    boardGrid.ActivateAttackSelection(this, selectedTroop.attackRange);
+                }
+            }
         }
     }
 
     void OnMouseEnter()
     {
-        spriteRenderer.color = stateColor + new Color(0f, 0f, 0f, 0.3f);
+        spriteRenderer.color = BlendColors(finalColor, hoverColor);
     }
 
     void OnMouseExit()
     {
-        spriteRenderer.color = stateColor;
+        // Reset to the pre-hover color
+        spriteRenderer.color = finalColor;
     }
 }

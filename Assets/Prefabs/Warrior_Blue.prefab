@@ -99,7 +99,7 @@ Animator:
   m_GameObject: {fileID: 108950302924058661}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: -8146804650158481509, guid: 3836313db891f5f48afe9ce197d0c634, type: 3}
+  m_Controller: {fileID: 9100000, guid: 7be1ae6718c10ee44940ab238a7be16d, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -123,4 +123,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4337a6a0c246ba42932b616740c9bcf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  moveRange: 2
+  attackRange: 1
+  health: 3
+  damage: 2
+  team: 1
   offset: {x: 0, y: 0.14, z: 0}
+  healthDotPrefab: {fileID: 2058362011211586, guid: 771f90059f2e99242b26d43441a5ee97, type: 3}
+  dotSpacing: 0.2

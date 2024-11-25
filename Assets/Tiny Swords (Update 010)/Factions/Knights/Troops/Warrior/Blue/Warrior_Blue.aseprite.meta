@@ -2,7 +2,67 @@ fileFormatVersion: 2
 guid: 3836313db891f5f48afe9ce197d0c634
 ScriptedImporter:
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Attack_1
+    second: {fileID: 7400000, guid: 350fef65bb3aaad44b76d22f794350d0, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Attack_2
+    second: {fileID: 7400000, guid: b16fd40d9720b29468b4a952376610bf, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Attack_3
+    second: {fileID: 7400000, guid: c69e9a3abe7552543b568fa510a60160, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Attack_4
+    second: {fileID: 7400000, guid: cc14058fbb6cfdc4590296c1f723481b, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Attack_5
+    second: {fileID: 7400000, guid: efb3d80e349d44843a121cef6560b14d, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Attack_6
+    second: {fileID: 7400000, guid: 7257adb2431cbe74daeaa282e6219722, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Down
+    second: {fileID: 7400000, guid: f7e423a7a03ffe54f88591856ec36e1e, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Front
+    second: {fileID: 7400000, guid: ccd5ec51ad58a8e4987fc969c27faede, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Idle
+    second: {fileID: 7400000, guid: 925c9cce018f96d418edf1d93cc2c79e, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Original
+    second: {fileID: 7400000, guid: 87f578784ca80404c8ee424d9c013f88, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Run
+    second: {fileID: 7400000, guid: 0a3950782a1a8144d94d5adb829fa8b9, type: 2}
+  - first:
+      type: UnityEngine:AnimationClip
+      assembly: UnityEngine.AnimationModule
+      name: Up
+    second: {fileID: 7400000, guid: d08358f2fe5e6c14eab9e40ac3a6ee9a, type: 2}
   serializedVersion: 2
   userData: 
   assetBundleName: 
@@ -97,7 +157,7 @@ ScriptedImporter:
     addSortingGroup: 1
     addShadowCasters: 0
   importFileNodeState: 1
-  platformSettingsDirtyTick: 638669245429711637
+  platformSettingsDirtyTick: 638681748980551788
   textureAssetName: 
   singleSpriteImportData:
   - name: 
