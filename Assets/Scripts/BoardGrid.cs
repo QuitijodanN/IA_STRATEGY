@@ -11,14 +11,11 @@ public class BoardGrid : MonoBehaviour
     private Cell[,] cells;
     private GameManager gm;
 
-    private void Awake()
-    {
-        gm = GameManager.Instance;
-    }
     void Start()
     {
         GenerateGrid();
         StartCoroutine(InitializeTestTroops());
+        gm = GameManager.Instance;
     }
 
     private IEnumerator InitializeTestTroops()

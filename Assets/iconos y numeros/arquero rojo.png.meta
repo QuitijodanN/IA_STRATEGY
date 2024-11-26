@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      arquero rojo_0: -7463532185827468745
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

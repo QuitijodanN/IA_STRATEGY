@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      arquero azul_0: -588569997079433133
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

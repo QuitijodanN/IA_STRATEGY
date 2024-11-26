@@ -184,7 +184,10 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      caballero azul_0: 1736952987366907268
+      caballero azul_1: -1274163202630423680
+      caballero azul_2: 1907410649879375724
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

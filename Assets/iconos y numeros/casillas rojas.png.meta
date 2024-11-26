@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      casillas rojas_0: 7514854092573100602
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

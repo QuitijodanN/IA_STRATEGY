@@ -8,8 +8,8 @@ public class GameManager : MonoBehaviour
     public bool isGamePaused; // Estado del juego
 
     public TMP_Text text;
-    public List<Troop> allyTroopPrefabs;
-    public List<Troop> enemyTroopPrefabs;
+    public List<Troop> allyTroopPrefabs = new List<Troop>();
+    public List<Troop> enemyTroopPrefabs = new List<Troop>();
 
     public bool yourTurn = true;
     public int turn = 0;

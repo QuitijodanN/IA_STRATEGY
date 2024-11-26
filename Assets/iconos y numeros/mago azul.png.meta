@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      mago azul_0: 8982446792121922548
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

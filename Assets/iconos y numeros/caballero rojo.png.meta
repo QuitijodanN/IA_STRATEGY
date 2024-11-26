@@ -209,7 +209,11 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      caballero rojo_0: -3445756902317867206
+      caballero rojo_1: -8149427648042575880
+      caballero rojo_2: -5378670569862254534
+      caballero rojo_3: 1751231018663092466
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
