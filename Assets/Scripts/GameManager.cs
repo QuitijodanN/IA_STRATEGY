@@ -21,6 +21,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] int coinsRound;
     [SerializeField] BudgetCounter playerCounter;
     [SerializeField] BudgetCounter enemyCounter;
+    [SerializeField] BoxCounter playerBoxCounter;
+    [SerializeField] BoxCounter enemyBoxCounter;
     [SerializeField] int playerCount;
     [SerializeField] int enemyCount;
     private int playerCoins;
