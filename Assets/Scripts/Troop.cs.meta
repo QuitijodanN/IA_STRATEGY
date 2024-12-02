@@ -5,6 +5,7 @@ MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - healthDotPrefab: {fileID: 2058362011211586, guid: 771f90059f2e99242b26d43441a5ee97, type: 3}
+  - deathPrefab: {fileID: 886756761150208836, guid: c69070283a48c4643a75e8ef97e680c9, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

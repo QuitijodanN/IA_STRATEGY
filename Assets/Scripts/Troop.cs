@@ -3,17 +3,22 @@ using static UnityEngine.Rendering.DebugUI.Table;
 
 public class Troop : MonoBehaviour
 {
-    [Tooltip("Cuanto puede moverse")]
     public int moveRange = 1;
     public int attackRange = 1;
     public int health = 3;
     public int damage = 3;
+    public int cost = 2;
     public Team team = Team.None;
+    public Effect deathPrefab;
+    public AudioClip hitClip;
 
     [SerializeField] private Vector3 offset;
-    [SerializeField] private GameObject healthDotPrefab; // Prefab for the health dot
-    [SerializeField] private float dotSpacing = 0.2f;    // Spacing between dots
-    private Transform healthBarParent;                  // Parent for health dots
+    [SerializeField] private GameObject healthDotPrefab;
+    [SerializeField] private float dotSpacing = 0.2f;
+
+    private Animator animator;
+    private Transform healthBarParent;
+    private Troop target;
 
     private void Start()
     {
@@ -23,6 +28,8 @@ public class Troop : MonoBehaviour
         healthBarParent.position = transform.parent.position - new Vector3(0, 0.4f, 0); // Position below the character
 
         UpdateHealthDisplay();
+
+        animator = GetComponent<Animator>();
     }
 
     public void MoveToCell(Cell destination)
@@ -31,15 +38,34 @@ public class Troop : MonoBehaviour
         transform.SetParent(destination.transform);
     }
 
-    public void Attack(Troop troop)
+    public virtual void Attack(Troop troop)
     {
-        if (troop.team != team)
-        {
-            troop.TakeDamage(damage);
-            if (troop.health <= 0) {
-                Destroy(troop.gameObject);
+        target = troop;
+        if (animator != null) {
+            GameManager.Instance.attacking = true;
+            animator.SetTrigger("Attack");
+        } else {
+            OnFrame_Attack();
+        }
+    }
+
+    public void OnFrame_Attack()
+    {
+        if (target.team != team) {
+            target.TakeDamage(damage);
+            if (target.health <= 0) {
+                target.transform.GetComponentInParent<Cell>().SetColorTeam(team);
+                if (target.deathPrefab != null) {
+                    Instantiate(target.deathPrefab, target.transform.parent.position - new Vector3(0f, 0.8f, 0f), Quaternion.identity);
+                }
+                Destroy(target.gameObject);
+            }
+
+            if (hitClip != null) {
+                GameManager.Instance.GetComponent<AudioSource>().PlayOneShot(hitClip);
             }
         }
+        GameManager.Instance.attacking = false;
     }
 
     public void UpdateHealthDisplay()

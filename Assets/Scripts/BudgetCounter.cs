@@ -7,14 +7,22 @@ using UnityEngine.UI;
 public class BudgetCounter : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI txt;
+    private Slider slider;
 
-    private float maxLenght;
 
     private void Start()
     {
-        maxLenght = gameObject.GetComponent<RectTransform>().rect.width;
-        Debug.Log(maxLenght);
+        slider = GetComponent<Slider>();
     }
+
+    public void DisplayValue(int coinValue)
+    {
+        slider.value = coinValue;
+        txt.text = coinValue.ToString();
+    }
+
+
+    /*
     public void Change_Budget (int budget)
     {
 
@@ -48,5 +56,5 @@ public class BudgetCounter : MonoBehaviour
         }
         gameObject.transform.localScale = new Vector3(0.1f * budget, 1, 1);
         gameObject.transform.localPosition = new Vector3(budget * maxLenght / 20 - maxLenght / 2, 0, 0);
-    }
+    }*/
 }

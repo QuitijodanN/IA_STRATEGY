@@ -70,6 +70,11 @@ public class Cell : MonoBehaviour
         UpdateCellColor();
     }
 
+    public Team GetColorTeam()
+    {
+        return team;
+    }
+
     public (int row, int col) GetGridPosition()
     {
         return (row, col);
@@ -103,11 +108,15 @@ public class Cell : MonoBehaviour
 
     void OnMouseDown()
     {
+        if (gm.attacking) return;
         // Cuando clicas en una celda sin tropas (vacía)
         if (transform.childCount == 0) {
             // Cuando clicas sobre una selección de movimiento (exclusivo de celdas vacías)
             if (activeSelection == Selection.Movement) {
                 boardGrid.MoveSelectedTroop(this);
+            }
+            else if (activeSelection == Selection.Attack) {
+                boardGrid.AttackWithSelectedTroop(this);
             }
             boardGrid.ResetGridActiveSelections();
         }

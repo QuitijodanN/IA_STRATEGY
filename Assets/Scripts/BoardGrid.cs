@@ -10,35 +10,35 @@ public class BoardGrid : MonoBehaviour
     public Cell selectedTroopCell = null;
     private Cell[,] cells;
     private GameManager gm;
+    [SerializeField] private AudioClip selectClip;
+    [SerializeField] private AudioClip moveClip;
 
     void Start()
     {
         GenerateGrid();
-        StartCoroutine(InitializeTestTroops());
+        StartCoroutine(InitializeCells());
         gm = GameManager.Instance;
     }
 
-    private IEnumerator InitializeTestTroops()
+    private IEnumerator InitializeCells()
     {
         // Wait for the end of the frame to ensure all components are loaded and rendered.
         yield return new WaitForEndOfFrame();
 
+        // Color first and last column accordingly
+        PaintPath(cells[0, 0], cells[rows - 1, 0], Team.Blue);
+        PaintPath(cells[0, columns - 1], cells[rows - 1, columns - 1], Team.Red);
+
+        // Spawn test troops
         int col_for_ally = 0;
         int col_for_enemies = columns - 1;
-
         for (int i = 0; i < gm.allyTroopPrefabs.Count; i++) {
-            Troop testTroop = Instantiate(gm.allyTroopPrefabs[i], cells[0, col_for_ally].transform.position, Quaternion.identity);
-
-            testTroop.MoveToCell(cells[0, col_for_ally]);
-            PaintPath(cells[0, col_for_ally], cells[0, col_for_ally], Team.Blue);
+            SpawnTroop(gm.allyTroopPrefabs[i], cells[0, col_for_ally], Team.Blue);
             col_for_ally++;
         }
 
         for (int i = 0; i < gm.enemyTroopPrefabs.Count; i++) {
-            Troop testTroop = Instantiate(gm.enemyTroopPrefabs[i], cells[rows - 1, col_for_enemies].transform.position, Quaternion.identity);
-
-            testTroop.MoveToCell(cells[rows - 1, col_for_enemies]);
-            PaintPath(cells[rows - 1, col_for_enemies], cells[rows - 1, col_for_enemies], Team.Red);
+            SpawnTroop(gm.enemyTroopPrefabs[i], cells[rows - 1, col_for_enemies], Team.Red);
             col_for_enemies--;
         }
     }
@@ -61,6 +61,13 @@ public class BoardGrid : MonoBehaviour
         }
     }
 
+    public void SpawnTroop(Troop troopPrefab, Cell cell, Team team)
+    {
+        Troop testTroop = Instantiate(troopPrefab, cell.transform.position, Quaternion.identity);
+        testTroop.MoveToCell(cell);
+        PaintPath(cell, cell, team);
+    }
+
     public void ResetGridActiveSelections()
     {
         for (int row = 0; row < rows; row++) {
@@ -72,6 +79,9 @@ public class BoardGrid : MonoBehaviour
 
     public void ActivateMovementSelection(Cell cell, int movement)
     {
+        if (selectClip != null) {
+            gm.GetComponent<AudioSource>().PlayOneShot(selectClip);
+        }
         selectedTroopCell = cell;
         (int x, int y) gridPosition = cell.GetGridPosition();
         int x = gridPosition.x;
@@ -115,9 +125,17 @@ public class BoardGrid : MonoBehaviour
         void ActivateAttackIfInBounds(int i, int j)
         {
             if (i >= 0 && i < cells.GetLength(0) && j >= 0 && j < cells.GetLength(1)) {
-                if (cells[i, j].transform.childCount > 0 && cells[i, j] != cell) {
-                    if (cells[i, j].transform.GetComponentInChildren<Troop>().team != cell.transform.GetComponentInChildren<Troop>().team)
+                Troop selectedTroop = selectedTroopCell.transform.GetComponentInChildren<Troop>();
+                if (selectedTroop is Tower) {
+                    if (cells[i, j].GetColorTeam() != selectedTroop.team) {
                         cells[i, j].SetActiveSelection(Selection.Attack);
+                    }
+                }
+                else {
+                    if (cells[i, j].transform.childCount > 0 && cells[i, j] != cell) {
+                        if (cells[i, j].transform.GetComponentInChildren<Troop>().team != selectedTroop.team)
+                            cells[i, j].SetActiveSelection(Selection.Attack);
+                    }
                 }
             }
         }
@@ -135,6 +153,9 @@ public class BoardGrid : MonoBehaviour
 
     public void MoveSelectedTroop(Cell destination)
     {
+        if (moveClip != null) {
+            gm.GetComponent<AudioSource>().PlayOneShot(moveClip);
+        }
         if (selectedTroopCell != null) {
             Troop selectedTroop = selectedTroopCell.transform.GetChild(0).GetComponent<Troop>();
             if (selectedTroop != null) {
@@ -183,13 +204,47 @@ public class BoardGrid : MonoBehaviour
     {
         if (selectedTroopCell != null) {
             Troop selectedTroop = selectedTroopCell.transform.GetChild(0).GetComponent<Troop>();
-            Troop enemy = destination.transform.GetChild(0).GetComponent<Troop>();
             if (selectedTroop != null) {
                 //Attack
-                selectedTroop.Attack(enemy);
+                if (selectedTroop is Tower) {
+                    AttackWithArea(selectedTroopCell, selectedTroop.attackRange);
+                } else {
+                    Troop enemy = destination.transform.GetChild(0).GetComponent<Troop>();
+                    selectedTroop.Attack(enemy);
+                    
+                }
                 gm.UseAction();
             }
             selectedTroopCell = null;
+        }
+    }
+
+    public void AttackWithArea(Cell cell, int range)
+    {
+        void AttackIfInBounds(int i, int j)
+        {
+            if (i >= 0 && i < cells.GetLength(0) && j >= 0 && j < cells.GetLength(1)) {
+                Troop selectedTroop = cell.transform.GetChild(0).GetComponent<Troop>();
+                if (cells[i, j].transform.childCount > 0 && cells[i, j] != cell) {
+                    Troop enemy = cells[i, j].transform.GetComponentInChildren<Troop>();
+                    if (enemy.team != selectedTroop.team) {
+                        selectedTroop.Attack(enemy);
+                    }
+                }
+                else {
+                    PaintPath(cells[i, j], cells[i, j], selectedTroop.team);
+                }
+            }
+        }
+
+        // Loop through rows and columns within the specified range
+        for (int offsetX = -range; offsetX <= range; offsetX++) {
+            for (int offsetY = -range; offsetY <= range; offsetY++) {
+                int currentX = cell.GetGridPosition().col + offsetX;
+                int currentY = cell.GetGridPosition().row + offsetY;
+
+                AttackIfInBounds(currentY, currentX);
+            }
         }
     }
 }

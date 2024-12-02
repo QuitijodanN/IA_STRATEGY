@@ -6,18 +6,21 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
     public bool isGamePaused; // Estado del juego
+    public bool attacking = false;
 
     public TMP_Text text;
+    public BoardGrid board;
     public List<Troop> allyTroopPrefabs = new List<Troop>();
     public List<Troop> enemyTroopPrefabs = new List<Troop>();
 
     public bool yourTurn = true;
     public int turn = 0;
     public int maxNumActions = 5;
+    public int maxCoins = 20;
 
     [SerializeField] int coinsRound;
-    [SerializeField] BudgetCounter enemyCounter;
     [SerializeField] BudgetCounter playerCounter;
+    [SerializeField] BudgetCounter enemyCounter;
     [SerializeField] int playerCount;
     [SerializeField] int enemyCount;
     private int playerCoins;
@@ -39,7 +42,29 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         ResetActions();
+        playerCoins = maxCoins;
+        playerCounter.DisplayValue(playerCoins);
     }
+
+    public int GetCoins(Team team)
+    {
+        if (team == Team.Blue) return playerCoins;
+        else if (team == Team.Red) return enemyCoins;
+        else return 0;
+    }
+
+    public void SpendCoins(int coins, Team team)
+    {
+        if (team == Team.Blue) {
+            playerCoins -= coins;
+            playerCounter.DisplayValue(playerCoins);
+        }
+        else if (team == Team.Red) {
+            enemyCoins -= coins;
+            enemyCounter.DisplayValue(enemyCoins);
+        }
+    }
+
     public void ChangeTurn()
     {
         yourTurn = !yourTurn;
@@ -47,15 +72,18 @@ public class GameManager : MonoBehaviour
         if (yourTurn) {
             text.text = "Es tu turno";
             playerCoins += coinsRound + playerCount;
-            playerCoins = Mathf.Clamp(playerCoins, 0, 10);
-            playerCounter.Change_Budget(playerCoins);
+            playerCoins = Mathf.Clamp(playerCoins, 0, maxCoins);
+            //playerCounter.Change_Budget(playerCoins);
+            playerCounter.DisplayValue(playerCoins);
             turn++;
         }
         else {
             text.text = "Es el turno enemigo";
             enemyCoins += coinsRound + enemyCount;
-            enemyCoins = Mathf.Clamp(enemyCoins, 0, 10);
-            enemyCounter.Change_Budget(enemyCoins);
+            enemyCoins = Mathf.Clamp(enemyCoins, 0, maxCoins);
+            //enemyCounter.Change_Budget(enemyCoins);
+            enemyCounter.DisplayValue(enemyCoins);
+
         }
         ResetActions();
     }
