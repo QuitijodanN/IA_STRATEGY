@@ -17,7 +17,10 @@ public class BudgetCounter : MonoBehaviour
 
     public void DisplayValue(int coinValue)
     {
+        if (slider != null)
+        { 
         slider.value = coinValue;
+        }
         txt.text = coinValue.ToString();
     }
 

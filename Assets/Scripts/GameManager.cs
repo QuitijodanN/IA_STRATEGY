@@ -21,8 +21,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] int coinsRound;
     [SerializeField] BudgetCounter playerCounter;
     [SerializeField] BudgetCounter enemyCounter;
-    [SerializeField] BoxCounter playerBoxCounter;
-    [SerializeField] BoxCounter enemyBoxCounter;
+    [SerializeField] BudgetCounter playerBoxCounter;
+    [SerializeField] BudgetCounter enemyBoxCounter;
+    [SerializeField] ActionCounter blueActions;
+    [SerializeField] ActionCounter redActions;
     [SerializeField] int playerCount;
     [SerializeField] int enemyCount;
     private int playerCoins;
@@ -93,6 +95,12 @@ public class GameManager : MonoBehaviour
     public void UseAction()
     {
         actions--;
+
+        if (yourTurn)
+            blueActions.UpdateActionDisplay(actions);
+        else
+            redActions.UpdateActionDisplay(actions);
+
         if (actions <= 0) {
             ChangeTurn();
         }
@@ -101,6 +109,11 @@ public class GameManager : MonoBehaviour
     public void ResetActions()
     {
         actions = maxNumActions;
+
+        if (yourTurn)
+            blueActions.UpdateActionDisplay(actions);
+        else
+            redActions.UpdateActionDisplay(actions);
     }
 
     public void PauseGame()
@@ -114,4 +127,6 @@ public class GameManager : MonoBehaviour
         isGamePaused = false;
         Time.timeScale = 1f; // Restaura la física y animaciones
     }
+
+    
 }
