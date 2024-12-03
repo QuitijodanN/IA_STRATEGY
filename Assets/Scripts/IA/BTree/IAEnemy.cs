@@ -5,6 +5,7 @@ using UnityEditor.PackageManager;
 using UnityEngine;
 using static UnityEngine.Rendering.DebugUI.Table;
 using UnityEngine.UIElements;
+using static IABase;
 
 public class IAEnemy : IABase
 {
@@ -41,7 +42,8 @@ public class IAEnemy : IABase
         {
             foreach (IANode n in n_subNodes)
             {
-              
+
+                //Aqui va el timer
                 NodeUpdateResult subsubNodeResult =  n.Update();
 
                 if(subsubNodeResult == NodeUpdateResult.Running)
@@ -56,6 +58,45 @@ public class IAEnemy : IABase
 
         IList<IANode> n_subNodes;
     }
+
+    class IASelectEnemyTroopNode : IANode
+    {
+        IAInfo aiInfo;
+        Troop selectedEnemyTroop;
+
+        public IASelectEnemyTroopNode(IAInfo IAinfo)
+        {
+            aiInfo = IAinfo;
+            selectedEnemyTroop = aiInfo.selectedEnemyTroop;
+        }
+        public void init()
+        {
+           
+        }
+
+        public NodeUpdateResult Update()
+        {
+           if (selectedEnemyTroop == null)
+           {
+                Debug.Log("No hay tropa aliada seleccionada como target");
+                selectedEnemyTroop = aiInfo.allyTeam[0];
+
+            }
+            else
+            {
+                foreach (Troop enemy in aiInfo.allyTeam)
+                {
+                    if (enemy != selectedEnemyTroop) selectedEnemyTroop = enemy;
+                }
+            }
+
+
+           if(selectedEnemyTroop == null) return NodeUpdateResult.Failure;
+
+           Debug.Log("Tropa ALIADA seleccionada" + selectedEnemyTroop);
+           return NodeUpdateResult.Success;
+        }
+    }
     class IASelectTroopNode : IANode
     {
        
@@ -65,9 +106,6 @@ public class IAEnemy : IABase
         {
             iaInfo = iAInfo;
             selectedTroop = iaInfo.selectedTroop;
-            
-            
-
 
         }
         public void init()
@@ -170,9 +208,8 @@ public class IAEnemy : IABase
 
         //Cambiar este NODO por otro
         IANode nodeSeleccionarUnidad = new IASelectTroopNode(gm.GetIAInfo());
-
-
-        /* IANode nodeSeleccionarUnidadEnemiga = ...;
+        IANode nodeSeleccionarUnidadEnemiga = new IASelectEnemyTroopNode(gm.GetIAInfo());
+        /* 
          IANode nodeAcercarse = ...;
          IANode nodeAtacar = ...;
          IANode nodeComprar = ....;
@@ -180,6 +217,7 @@ public class IAEnemy : IABase
 
         //Añadirlo a la lista
         secuenceNodeList.Add(nodeSeleccionarUnidad);
+        secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
 
 
         /* secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);

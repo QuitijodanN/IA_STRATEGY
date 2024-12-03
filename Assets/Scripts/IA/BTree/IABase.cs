@@ -9,6 +9,7 @@ public class IABase : MonoBehaviour
         public List<Troop> enemyTeam;
         public List<Troop> allyTeam;
         public Troop selectedTroop;
+        public Troop selectedEnemyTroop;
 
     }
 }
