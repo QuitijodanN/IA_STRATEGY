@@ -11,6 +11,7 @@ public class BoardGrid : MonoBehaviour
     public Troop selectedTroop = null;
 
     private Cell[,] cells;
+    private float[,] influenceMap;
 
     [SerializeField] private AudioClip selectClip;
     [SerializeField] private AudioClip moveClip;
@@ -71,6 +72,57 @@ public class BoardGrid : MonoBehaviour
             SpawnTroop(gm.enemyTroopPrefabs[i], cells[rows - 1, col_for_enemies]);
             col_for_enemies--;
         }
+        ActualizeInfluence();
+    }
+
+    public void ActualizeInfluence()
+    {
+        influenceMap = new float[rows, columns];
+
+        for (int row = 0; row < rows; row++)
+        {
+            for (int col = 0; col < columns; col++)
+            {
+                Team thisCellTeam = cells[row, col].GetColorTeam();
+                int value = 0;
+                if (thisCellTeam != Team.None)
+                {
+                    if (thisCellTeam == Team.Blue)
+                        value = 1;
+                    else
+                        value = -1;
+
+                    if (cells[row, col].transform.childCount > 0)
+                        TroopInfluence(row, col, value);
+                }
+                influenceMap[row, col] += value;
+            }
+        }
+        for (int row = 0; row < rows; row++)
+        {
+            string line = "";
+            for (int col = 0; col < columns; col++)
+            {
+                line += " / " + influenceMap[row, col].ToString();
+            }
+            Debug.Log(line);
+        }
+    }
+
+    void TroopInfluence(int row, int col, int value)
+    {
+        for (int nRow = row - 2; nRow <= row + 2; nRow++)
+            for (int nCol = col - 2; nCol <= col + 2; nCol++)
+            {
+                if (nRow >= 0 && nCol >= 0 && nRow < rows && nCol < columns)
+                {
+                    float distance = Mathf.Sqrt(Mathf.Pow(nCol - col, 2) + Mathf.Pow(nRow - row, 2));
+                    float nValue = value * 100;
+                    if (distance > 0)
+                        nValue = value / (distance * 2);
+                    influenceMap[nRow, nCol] += nValue;
+                }
+            }
     }
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
