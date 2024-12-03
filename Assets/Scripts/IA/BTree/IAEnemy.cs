@@ -199,11 +199,11 @@ public class IAEnemy : IABase
 
         List<IANode> secuenceNodeList = new List<IANode>();
         /*
-         Crear Nodo para seleccionar unidad                             *Donde
-         Crear Nodo para seleccionar unidad enemiga                     *Falta
-         Crear Nodo para acercarse                                      *Falta A*
-         Crear Nodo para Atacar                                         *Falta
-         Crear Nodo para Comprar                                        
+         Crear Nodo para seleccionar unidad
+         Crear Nodo para seleccionar unidad enemiga
+         Crear Nodo para acercarse
+         Crear Nodo para Atacar
+         Crear Nodo para Comprar
          */
 
         //Cambiar este NODO por otro

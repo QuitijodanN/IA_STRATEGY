@@ -274,7 +274,6 @@ public class BoardGrid : MonoBehaviour
         ResetGridActiveSelections();
     }
 
-    //NO hace falta usarlo en la IA
     public void AttackWithArea(Troop troop)
     {
         Cell center = troop.transform.GetComponentInParent<Cell>();
