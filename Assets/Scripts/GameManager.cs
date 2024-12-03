@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using static IABase;
 
 public class GameManager : MonoBehaviour
 {
@@ -27,15 +28,20 @@ public class GameManager : MonoBehaviour
     [SerializeField] private BudgetCounter blueActions;
     [SerializeField] private BudgetCounter redActions;
 
+
+    private IAInfo aiInfo;
     private int playerCoins;
     private int enemyCoins;
     private int actions;
     private int turn = 0;
-    private List<Troop> playerTroops;
-    private List<Troop> enemyTroops;
+
+    //Private al terminar
+    public List<Troop> playerTroops;
+    public List<Troop> enemyTroops;
 
     private void Awake()
     {
+        aiInfo = new IAInfo();
         // Asegurarse de que solo haya una instancia del GameManager
         if (Instance == null) {
             Instance = this;
@@ -48,6 +54,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+       
+
         audioSource = GetComponent<AudioSource>();
 
         ResetActions();
@@ -97,6 +105,7 @@ public class GameManager : MonoBehaviour
             enemyTroops.Add(troop);
             enemyTroopCounter.DisplayValue(enemyTroops.Count);
         }
+        UpdateIAInfo();
     }
 
     public void RemoveTroop(Troop troop)
@@ -109,6 +118,7 @@ public class GameManager : MonoBehaviour
             enemyTroops.Remove(troop);
             enemyTroopCounter.DisplayValue(enemyTroops.Count);
         }
+        UpdateIAInfo();
     }
 
     public void UpdateColorCells()
@@ -174,5 +184,19 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f; // Restaura la física y animaciones
     }
 
-    
+    public IAInfo GetIAInfo()
+    {
+        //Debug.Log(aiInfo.allyTeam[0].name);
+        return aiInfo;
+    }
+
+    public void UpdateIAInfo()
+    {
+        aiInfo.enemyTeam = enemyTroops;
+        aiInfo.allyTeam = playerTroops;
+
+        //Debug.Log(aiInfo.allyTeam[0].name);
+
+
+    }
 }

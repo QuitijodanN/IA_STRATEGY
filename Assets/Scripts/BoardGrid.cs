@@ -18,10 +18,14 @@ public class BoardGrid : MonoBehaviour
 
     private GameManager gm;
 
-    void Start()
+    private void Awake()
     {
         GenerateGrid();
         StartCoroutine(InitializeCells());
+    }
+    void Start()
+    {
+       
         gm = GameManager.Instance;
     }
 

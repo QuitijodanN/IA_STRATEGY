@@ -11,6 +11,11 @@ public class Troop : MonoBehaviour
     public Team team = Team.None;
     public Effect deathPrefab;
     public AudioClip hitClip;
+    public int TroopPower { get
+        {
+            return health + moveRange;
+        }
+    }
 
     [SerializeField] private Vector3 offset;
     [SerializeField] private GameObject healthDotPrefab;
