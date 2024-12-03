@@ -186,7 +186,7 @@ public class IAEnemy : IABase
     // Update is called once per frame
     void Update()
     {
-        //if(!gm.yourTurn) StartCoroutine(UpdateIA());
-        StartCoroutine(UpdateIA());
+        if(!gm.yourTurn) StartCoroutine(UpdateIA());
+        //StartCoroutine(UpdateIA());
     }
 }
