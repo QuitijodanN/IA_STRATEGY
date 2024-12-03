@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int maxNumActions = 5;
     [SerializeField] private int maxCoins = 20;
     [SerializeField] private int coinsRound = 5;
-    [SerializeField] private TMP_Text turnText;
+    //[SerializeField] private TMP_Text turnText;
     [SerializeField] private BudgetCounter playerCounter;
     [SerializeField] private BudgetCounter enemyCounter;
     [SerializeField] private BudgetCounter playerCellCounter;
@@ -123,7 +123,7 @@ public class GameManager : MonoBehaviour
         yourTurn = !yourTurn;
 
         if (yourTurn) {
-            turnText.text = "Es tu turno";
+            //turnText.text = "Es tu turno";
             changeTurn.SetTrigger("changeTurn"); 
             playerCoins += coinsRound + playerTroops.Count;
             playerCoins = Mathf.Clamp(playerCoins, 0, maxCoins);
@@ -131,7 +131,7 @@ public class GameManager : MonoBehaviour
             turn++;
         }
         else {
-            turnText.text = "Es el turno enemigo";
+            //turnText.text = "Es el turno enemigo";
             changeTurn.SetTrigger("changeTurn");
             enemyCoins += coinsRound + enemyTroops.Count;
             enemyCoins = Mathf.Clamp(enemyCoins, 0, maxCoins);
