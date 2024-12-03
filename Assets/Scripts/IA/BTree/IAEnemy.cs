@@ -41,6 +41,7 @@ public class IAEnemy : IABase
         {
             foreach (IANode n in n_subNodes)
             {
+              
                 NodeUpdateResult subsubNodeResult =  n.Update();
 
                 if(subsubNodeResult == NodeUpdateResult.Running)
@@ -49,6 +50,7 @@ public class IAEnemy : IABase
                     return NodeUpdateResult.Failure;
 
             }
+            //Aqui va el timer
             return NodeUpdateResult.Success;
         }
 
@@ -56,6 +58,7 @@ public class IAEnemy : IABase
     }
     class IASelectTroopNode : IANode
     {
+       
         IAInfo iaInfo;
         Troop selectedTroop;
         public IASelectTroopNode(IAInfo iAInfo)
@@ -114,7 +117,9 @@ public class IAEnemy : IABase
             //Si no tenemos tropas terminamos -> failure
             if (selectedTroop == null)
             {
+
                 Debug.Log(selectedTroop);
+                GameManager.Instance.UseAction();
                 return NodeUpdateResult.Failure;
 
             }
@@ -122,6 +127,7 @@ public class IAEnemy : IABase
             {
                 
                 Debug.Log("Nueva tropa seleccionada"+selectedTroop);
+                GameManager.Instance.UseAction();
                 return NodeUpdateResult.Success;
             }
         }
@@ -159,13 +165,20 @@ public class IAEnemy : IABase
          Crear Nodo para Comprar                                        
          */
 
+        //Cambiar este NODO por otro
         IANode nodeSeleccionarUnidad = new IASelectTroopNode(gm.GetIAInfo());
+
+
         /* IANode nodeSeleccionarUnidadEnemiga = ...;
          IANode nodeAcercarse = ...;
          IANode nodeAtacar = ...;
          IANode nodeComprar = ....;
         */
+
+        //Añadirlo a la lista
         secuenceNodeList.Add(nodeSeleccionarUnidad);
+
+
         /* secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
          secuenceNodeList.Add(nodeAcercarse);
          secuenceNodeList.Add(nodeAtacar);
@@ -174,6 +187,8 @@ public class IAEnemy : IABase
          n_root = new IASecunceNode(secuenceNodeList);
          n_root.init();
     }
+
+
 
     private IEnumerator UpdateIA()
     {

@@ -148,6 +148,7 @@ public class GameManager : MonoBehaviour
             enemyCounter.DisplayValue(enemyCoins);
 
         }
+        board.ActualizeInfluence();
         ResetActions();
     }
 
