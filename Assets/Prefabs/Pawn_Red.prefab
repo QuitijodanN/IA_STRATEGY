@@ -125,7 +125,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveRange: 1
   attackRange: 3
-  health: 3
+  health: 1
   damage: 3
   cost: 5
   team: 2

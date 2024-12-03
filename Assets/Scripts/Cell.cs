@@ -113,28 +113,25 @@ public class Cell : MonoBehaviour
         if (transform.childCount == 0) {
             // Cuando clicas sobre una selección de movimiento (exclusivo de celdas vacías)
             if (activeSelection == Selection.Movement) {
-                boardGrid.MoveSelectedTroop(this);
+                boardGrid.MoveTroop(boardGrid.selectedTroop, this);
             }
             else if (activeSelection == Selection.Attack) {
-                boardGrid.AttackWithSelectedTroop(this);
+                boardGrid.AttackWithTroop(boardGrid.selectedTroop, null);
             }
-            boardGrid.ResetGridActiveSelections();
         }
         // Cuando clicas sobre una tropa
         else {
+            Troop clickedTroop = transform.GetChild(0).GetComponent<Troop>();
             // Cuando clicas sobre una tropa a la que atacar
             if (activeSelection == Selection.Attack) {
-                boardGrid.AttackWithSelectedTroop(this);
-                boardGrid.ResetGridActiveSelections();
+                boardGrid.AttackWithTroop(boardGrid.selectedTroop, clickedTroop);
             }
             // Cuando clicas sobre una tropa que quieres usar para mover o atacar
             else {
-                boardGrid.ResetGridActiveSelections();
-                Troop selectedTroop = transform.GetChild(0).GetComponent<Troop>();
                 // Solo seleccionables las tropas del turno correspondiente
-                if (gm.yourTurn && selectedTroop.team == Team.Blue || !gm.yourTurn && selectedTroop.team == Team.Red) {
-                    boardGrid.ActivateMovementSelection(this, selectedTroop.moveRange);
-                    boardGrid.ActivateAttackSelection(this, selectedTroop.attackRange);
+                if (gm.yourTurn && clickedTroop.team == Team.Blue || !gm.yourTurn && clickedTroop.team == Team.Red) {
+                    boardGrid.ActivateMovementSelection(clickedTroop);
+                    boardGrid.ActivateAttackSelection(clickedTroop);
                 }
             }
         }

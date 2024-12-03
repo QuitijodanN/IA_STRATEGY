@@ -7,9 +7,7 @@ public class TroopDeployer : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     public GameObject frameOutline;
     public GameObject troopImage;
     public Troop troopPrefab; // Reference to the 3D asset prefab
-    private AudioSource audioSource;
     [SerializeField] private AudioClip grabClip;
-    [SerializeField] private AudioClip dropClip;
     [SerializeField] private AudioClip notAllowedClip;
 
     private Vector2 offset;
@@ -22,7 +20,6 @@ public class TroopDeployer : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     void Start()
     {
         gm = GameManager.Instance;
-        audioSource = gm.GetComponent<AudioSource>();
 
         // Store the initial RectTransform state
         RectTransform rectTransform = troopImage.GetComponent<RectTransform>();
@@ -47,7 +44,7 @@ public class TroopDeployer : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        audioSource.PlayOneShot(grabClip);
+        gm.audioSource.PlayOneShot(grabClip);
         // Calculate offset from pointer position to the center of the card
         RectTransform rectTransform = troopImage.GetComponent<RectTransform>();
         offset = (Vector2)rectTransform.position - eventData.position;
@@ -88,13 +85,11 @@ public class TroopDeployer : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
                 if (cell != null && currentGold >= troopPrefab.cost && cell.transform.childCount == 0 &&
                     (cell.GetColorTeam() == Team.Blue || (cell.GetColorTeam() != Team.Red && troopPrefab is Bomb))) {
-                    audioSource.PlayOneShot(dropClip);
                     gm.SpendCoins(troopPrefab.cost, troopPrefab.team);
-                    gm.board.SpawnTroop(troopPrefab, cell, troopPrefab.team);
-                    gm.UseAction();
+                    gm.board.SpawnTroop(troopPrefab, cell);
                 }
                 else {
-                    audioSource.PlayOneShot(notAllowedClip);
+                    gm.audioSource.PlayOneShot(notAllowedClip);
                 }
             }
         }

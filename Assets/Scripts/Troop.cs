@@ -16,12 +16,14 @@ public class Troop : MonoBehaviour
     [SerializeField] private GameObject healthDotPrefab;
     [SerializeField] private float dotSpacing = 0.2f;
 
+    private GameManager gm;
     private Animator animator;
     private Transform healthBarParent;
     private Troop target;
 
     private void Start()
     {
+        gm = GameManager.Instance;
         // Create a parent GameObject for health dots
         healthBarParent = new GameObject("HealthBar").transform;
         healthBarParent.SetParent(transform);
@@ -42,7 +44,7 @@ public class Troop : MonoBehaviour
     {
         target = troop;
         if (animator != null) {
-            GameManager.Instance.attacking = true;
+            gm.attacking = true;
             animator.SetTrigger("Attack");
         } else {
             OnFrame_Attack();
@@ -51,21 +53,24 @@ public class Troop : MonoBehaviour
 
     public void OnFrame_Attack()
     {
-        if (target.team != team) {
+        gm = GameManager.Instance;
+        if (target != null && target.team != team) {
             target.TakeDamage(damage);
             if (target.health <= 0) {
-                target.transform.GetComponentInParent<Cell>().SetColorTeam(team);
+                Cell targetCell = target.transform.GetComponentInParent<Cell>();
+                gm.board.PaintPath(targetCell, targetCell, team);
                 if (target.deathPrefab != null) {
                     Instantiate(target.deathPrefab, target.transform.parent.position - new Vector3(0f, 0.8f, 0f), Quaternion.identity);
                 }
+                gm.RemoveTroop(target);
                 Destroy(target.gameObject);
             }
 
             if (hitClip != null) {
-                GameManager.Instance.GetComponent<AudioSource>().PlayOneShot(hitClip);
+                gm.audioSource.PlayOneShot(hitClip);
             }
         }
-        GameManager.Instance.attacking = false;
+        gm.attacking = false;
     }
 
     public void UpdateHealthDisplay()

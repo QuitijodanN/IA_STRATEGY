@@ -5,31 +5,34 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
-    public bool isGamePaused; // Estado del juego
+    public bool isGamePaused = false; // Estado del juego
     public bool attacking = false;
+    public bool yourTurn = true;
 
-    public TMP_Text text;
-    public BoardGrid board;
     public List<Troop> allyTroopPrefabs = new List<Troop>();
     public List<Troop> enemyTroopPrefabs = new List<Troop>();
+    public BoardGrid board;
+    [HideInInspector] public AudioSource audioSource;
 
-    public bool yourTurn = true;
-    public int turn = 0;
-    public int maxNumActions = 5;
-    public int maxCoins = 20;
+    [SerializeField] private int maxNumActions = 5;
+    [SerializeField] private int maxCoins = 20;
+    [SerializeField] private int coinsRound = 5;
+    [SerializeField] private TMP_Text turnText;
+    [SerializeField] private BudgetCounter playerCounter;
+    [SerializeField] private BudgetCounter enemyCounter;
+    [SerializeField] private BudgetCounter playerCellCounter;
+    [SerializeField] private BudgetCounter enemyCellCounter;
+    [SerializeField] private BudgetCounter playerTroopCounter;
+    [SerializeField] private BudgetCounter enemyTroopCounter;
+    [SerializeField] private BudgetCounter blueActions;
+    [SerializeField] private BudgetCounter redActions;
 
-    [SerializeField] int coinsRound;
-    [SerializeField] BudgetCounter playerCounter;
-    [SerializeField] BudgetCounter enemyCounter;
-    [SerializeField] BudgetCounter playerBoxCounter;
-    [SerializeField] BudgetCounter enemyBoxCounter;
-    [SerializeField] ActionCounter blueActions;
-    [SerializeField] ActionCounter redActions;
-    [SerializeField] int playerCount;
-    [SerializeField] int enemyCount;
     private int playerCoins;
     private int enemyCoins;
     private int actions;
+    private int turn = 0;
+    private List<Troop> playerTroops;
+    private List<Troop> enemyTroops;
 
     private void Awake()
     {
@@ -45,9 +48,14 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+
         ResetActions();
-        playerCoins = maxCoins;
+        playerCoins = coinsRound;
         playerCounter.DisplayValue(playerCoins);
+
+        playerTroops = new List<Troop>();
+        enemyTroops = new List<Troop>();
     }
 
     public int GetCoins(Team team)
@@ -69,23 +77,61 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public List<Troop> GetTroops(Team team)
+    {
+        if (team == Team.Blue) {
+            return playerTroops;
+        } else if (team == Team.Red) {
+            return enemyTroops;
+        }
+        return null;
+    }
+
+    public void AddTroop(Troop troop)
+    {
+        if (troop.team == Team.Blue) {
+            playerTroops.Add(troop);
+            playerTroopCounter.DisplayValue(playerTroops.Count);
+        }
+        else if (troop.team == Team.Red) {
+            enemyTroops.Add(troop);
+            enemyTroopCounter.DisplayValue(enemyTroops.Count);
+        }
+    }
+
+    public void RemoveTroop(Troop troop)
+    {
+        if (troop.team == Team.Blue) {
+            playerTroops.Remove(troop);
+            playerTroopCounter.DisplayValue(playerTroops.Count);
+        }
+        else if (troop.team == Team.Red) {
+            enemyTroops.Remove(troop);
+            enemyTroopCounter.DisplayValue(enemyTroops.Count);
+        }
+    }
+
+    public void UpdateColorCells()
+    {
+        playerCellCounter.DisplayValue(board.GetColorCellAmount(Team.Blue));
+        enemyCellCounter.DisplayValue(board.GetColorCellAmount(Team.Red));
+    }
+
     public void ChangeTurn()
     {
         yourTurn = !yourTurn;
 
         if (yourTurn) {
-            text.text = "Es tu turno";
-            playerCoins += coinsRound + playerCount;
+            turnText.text = "Es tu turno";
+            playerCoins += coinsRound + playerTroops.Count;
             playerCoins = Mathf.Clamp(playerCoins, 0, maxCoins);
-            //playerCounter.Change_Budget(playerCoins);
             playerCounter.DisplayValue(playerCoins);
             turn++;
         }
         else {
-            text.text = "Es el turno enemigo";
-            enemyCoins += coinsRound + enemyCount;
+            turnText.text = "Es el turno enemigo";
+            enemyCoins += coinsRound + enemyTroops.Count;
             enemyCoins = Mathf.Clamp(enemyCoins, 0, maxCoins);
-            //enemyCounter.Change_Budget(enemyCoins);
             enemyCounter.DisplayValue(enemyCoins);
 
         }
@@ -97,9 +143,9 @@ public class GameManager : MonoBehaviour
         actions--;
 
         if (yourTurn)
-            blueActions.UpdateActionDisplay(actions);
+            blueActions.DisplayValue(actions);
         else
-            redActions.UpdateActionDisplay(actions);
+            redActions.DisplayValue(actions);
 
         if (actions <= 0) {
             ChangeTurn();
@@ -111,9 +157,9 @@ public class GameManager : MonoBehaviour
         actions = maxNumActions;
 
         if (yourTurn)
-            blueActions.UpdateActionDisplay(actions);
+            blueActions.DisplayValue(actions);
         else
-            redActions.UpdateActionDisplay(actions);
+            redActions.DisplayValue(actions);
     }
 
     public void PauseGame()

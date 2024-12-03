@@ -107,7 +107,9 @@ MonoBehaviour:
   cost: 6
   team: 1
   deathPrefab: {fileID: 0}
+  hitClip: {fileID: 0}
   offset: {x: 0, y: 0.2, z: 0}
   healthDotPrefab: {fileID: 2058362011211586, guid: 771f90059f2e99242b26d43441a5ee97, type: 3}
   dotSpacing: 0.2
-  hitClip: {fileID: 8300000, guid: 9d886faf944862d4394d2958046eefe3, type: 3}
+  areaEffect: {fileID: 3561591978817274656, guid: f6406f61d67abc74798f8fa950d03a7e, type: 3}
+  towerClip: {fileID: 8300000, guid: 9d886faf944862d4394d2958046eefe3, type: 3}

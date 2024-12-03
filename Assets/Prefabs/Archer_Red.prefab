@@ -123,14 +123,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4337a6a0c246ba42932b616740c9bcf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveRange: 1
-  attackRange: 3
-  health: 1
+  moveRange: 2
+  attackRange: 2
+  health: 2
   damage: 2
   cost: 3
   team: 2
   deathPrefab: {fileID: 886756761150208836, guid: c69070283a48c4643a75e8ef97e680c9, type: 3}
+  hitClip: {fileID: 8300000, guid: 7034b7fd22d833b45b5ce7e44be53d20, type: 3}
   offset: {x: 0, y: -1.28, z: 0}
   healthDotPrefab: {fileID: 2058362011211586, guid: 771f90059f2e99242b26d43441a5ee97, type: 3}
   dotSpacing: 0.2
-  hitClip: {fileID: 8300000, guid: 7034b7fd22d833b45b5ce7e44be53d20, type: 3}

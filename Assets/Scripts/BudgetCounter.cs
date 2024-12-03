@@ -1,7 +1,5 @@
 using TMPro;
 using UnityEngine;
-using System.Collections;
-using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class BudgetCounter : MonoBehaviour
@@ -15,13 +13,15 @@ public class BudgetCounter : MonoBehaviour
         slider = GetComponent<Slider>();
     }
 
-    public void DisplayValue(int coinValue)
+    public void DisplayValue(int value)
     {
         if (slider != null)
         { 
-        slider.value = coinValue;
+            slider.value = value;
         }
-        txt.text = coinValue.ToString();
+        if (txt != null) {
+            txt.text = value.ToString();
+        }
     }
 
 

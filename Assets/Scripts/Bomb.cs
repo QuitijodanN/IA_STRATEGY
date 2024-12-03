@@ -19,8 +19,9 @@ public class Bomb : Troop
             GameManager.Instance.GetComponent<AudioSource>().PlayOneShot(hitClip);
         }
         Cell cell = transform.GetComponentInParent<Cell>();
-        GameManager.Instance.board.AttackWithArea(transform.GetComponentInParent<Cell>(), attackRange);
+        GameManager.Instance.board.AttackWithArea(this);
         Instantiate(deathPrefab, cell.transform.position - new Vector3(0f, 1.2f, 0f), Quaternion.identity);
+
         Destroy(gameObject);
     }
 
