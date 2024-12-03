@@ -62,9 +62,6 @@ public class IAEnemy : IABase
         {
             iaInfo = iAInfo;
             selectedTroop = iaInfo.selectedTroop;
-            
-            
-
 
         }
         public void init()
@@ -155,11 +152,11 @@ public class IAEnemy : IABase
 
         List<IANode> secuenceNodeList = new List<IANode>();
         /*
-         Crear Nodo para seleccionar unidad
-         Crear Nodo para seleccionar unidad enemiga
-         Crear Nodo para acercarse
-         Crear Nodo para Atacar
-         Crear Nodo para Comprar
+         Crear Nodo para seleccionar unidad                             *Donde
+         Crear Nodo para seleccionar unidad enemiga                     *Falta
+         Crear Nodo para acercarse                                      *Falta A*
+         Crear Nodo para Atacar                                         *Falta
+         Crear Nodo para Comprar                                        
          */
 
         IANode nodeSeleccionarUnidad = new IASelectTroopNode(gm.GetIAInfo());
@@ -186,7 +183,7 @@ public class IAEnemy : IABase
     // Update is called once per frame
     void Update()
     {
-        //if(!gm.yourTurn) StartCoroutine(UpdateIA());
-        StartCoroutine(UpdateIA());
+        if(!gm.yourTurn) StartCoroutine(UpdateIA());
+        //StartCoroutine(UpdateIA());
     }
 }
