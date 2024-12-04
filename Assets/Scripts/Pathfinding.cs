@@ -14,11 +14,11 @@ public class Pathfinding : MonoBehaviour {
 	}
 	
 	
-	public void StartFindPath(Node startPos, Node targetPos) {
-		StartCoroutine(FindPath(startPos,targetPos));
+	public void StartFindPath(Node startPos, Node targetPos, bool longDistance) {
+		StartCoroutine(FindPath(startPos,targetPos,longDistance));
 	}
 
-    IEnumerator FindPath(Node startNode, Node targetNode) {
+    IEnumerator FindPath(Node startNode, Node targetNode, bool longDistance) {
 
 		Node[] waypoints = new Node[0];
 		bool pathSuccess = false;		
@@ -42,15 +42,33 @@ public class Pathfinding : MonoBehaviour {
 						continue;
 					}
 					
-					int newMovementCostToNeighbour = currentNode.gCost + GetDistance(currentNode, neighbour);
-					if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour)) {
-						neighbour.gCost = newMovementCostToNeighbour;
-						neighbour.hCost = GetDistance(neighbour, targetNode);
-						neighbour.parent = currentNode;
-						
-						if (!openSet.Contains(neighbour))
-							openSet.Add(neighbour);
-					}
+					if (longDistance)
+					{
+                        int newMovementCostToNeighbour = currentNode.gCost + GetDistance(currentNode, neighbour);
+                        if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                        {
+                            neighbour.gCost = newMovementCostToNeighbour;
+                            neighbour.hCost = GetDistance(neighbour, targetNode);
+                            neighbour.parent = currentNode;
+
+                            if (!openSet.Contains(neighbour))
+                                openSet.Add(neighbour);
+                        }
+                    }
+					else if (DistanceOne(currentNode, neighbour))
+					{
+                        int newMovementCostToNeighbour = currentNode.gCost + GetDistance(currentNode, neighbour);
+                        if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                        {
+                            neighbour.gCost = newMovementCostToNeighbour;
+                            neighbour.hCost = GetDistance(neighbour, targetNode);
+                            neighbour.parent = currentNode;
+
+                            if (!openSet.Contains(neighbour))
+                                openSet.Add(neighbour);
+                        }
+                    }
+					
 				}
 			}
 		}
@@ -58,7 +76,7 @@ public class Pathfinding : MonoBehaviour {
 		if (pathSuccess) {
 			waypoints = RetracePath(startNode,targetNode);
 		}
-		requestManager.FinishedProcessingPath(waypoints,pathSuccess);
+		requestManager.FinishedProcessingPath(waypoints,pathSuccess, longDistance);
 		
 	}
 	
@@ -78,6 +96,15 @@ public class Pathfinding : MonoBehaviour {
 		return reversedPath;
 		
 	}
+	bool DistanceOne(Node nodeA, Node nodeB)
+	{
+        int dstX = Mathf.Abs(nodeA.gridX - nodeB.gridX);
+        int dstY = Mathf.Abs(nodeA.gridY - nodeB.gridY);
+
+		if (dstX > 1 || dstY > 1)
+			return false;
+		return true;
+    }
 	
 	int GetDistance(Node nodeA, Node nodeB) {
 		int dstX = Mathf.Abs(nodeA.gridX - nodeB.gridX);
