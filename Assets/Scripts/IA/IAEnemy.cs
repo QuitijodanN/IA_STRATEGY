@@ -261,43 +261,6 @@ public class IAEnemy : MonoBehaviour
             
     }
     */
-
-    //    private IEnumerator InitializeIA()
-    //    {
-    //        // Wait for the end of the frame to ensure all components are loaded and rendered.
-    //        yield return new WaitForEndOfFrame();
-
-    //        List<IANode> secuenceNodeList = new List<IANode>();
-    //        /*
-    //         Crear Nodo para seleccionar unidad
-    //         Crear Nodo para seleccionar unidad enemiga
-    //         Crear Nodo para acercarse
-    //         Crear Nodo para Atacar
-    //         Crear Nodo para Comprar
-    //         */
-
-    //        //Cambiar este NODO por otro
-    //        //IANode nodeSeleccionarUnidad = new IASelectTroopNode(gm.GetIAInfo());
-    //        //IANode nodeSeleccionarUnidadEnemiga = new IASelectEnemyTroopNode(gm.GetIAInfo());
-    //        /* 
-    //         IANode nodeAcercarse = ...;
-    //         IANode nodeAtacar = ...;
-    //         IANode nodeComprar = ....;
-    //        */
-
-    //        //Añadirlo a la lista
-    //        //secuenceNodeList.Add(nodeSeleccionarUnidad);
-    //        //secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
-
-
-    //        /* secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
-    //         secuenceNodeList.Add(nodeAcercarse);
-    //         secuenceNodeList.Add(nodeAtacar);
-    //         secuenceNodeList.Add(nodeComprar);*/
-
-    //         n_root = new IASequenceNode(secuenceNodeList);
-    //         n_root.Init();
-    //    }
 }
 
 
