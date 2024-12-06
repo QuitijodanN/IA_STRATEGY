@@ -1,64 +1,149 @@
-using NUnit.Framework;
+
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.PackageManager;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI.Table;
-using UnityEngine.UIElements;
-using static IABase;
 
-public class IAEnemy : IABase
+public struct IAInfo
 {
-    
-    enum NodeUpdateResult
+    public List<Troop> enemyTeam;
+    public List<Troop> allyTeam;
+    public Troop selectedTroop;
+    public Troop selectedEnemyTroop;
+}
+
+public class IAEnemy : MonoBehaviour
+{
+
+    IANode n_root;
+    GameManager gm;
+    private float thinkTimer = 0f; // Temporizador
+
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
     {
-        Running,
-        Success,
-        Failure
+        gm = GameManager.Instance;
+        InitializeIA();
+        Think();
     }
+
+    private void Update()
+    {
+        if (!gm.yourTurn) {
+            thinkTimer += Time.deltaTime;
+
+            if (thinkTimer >= 0.5f) {
+                Think(); // Llamar a la función Think
+                thinkTimer = 0f; // Reiniciar el temporizador
+            }
+        } else {
+            thinkTimer = 0f;
+        }
+    }
+
+    void Think()
+    {
+        if (!gm.yourTurn) {
+            n_root.Action();
+        }
+    }
+
+
+    private void InitializeIA()
+    {
+        // iniciamos nodos hoja (acciones)
+        IADeploy deploy = new IADeploy();
+        IAAttack attack = new IAAttack();
+
+        // atamos nodos a los padres (sequence nodes)
+        IAEnoughGold enoughGold = new IAEnoughGold(deploy, attack);
+
+        n_root = enoughGold;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------------------------------
+    // -- NODOS EJEMPLO
+    // -----------------------------------------------------------------------------------------------------------------------------------------
+    class IAEnoughGold : IASequenceNode
+    {
+        public IAEnoughGold(IANode nodeTrue, IANode nodeFalse) : base(nodeTrue, nodeFalse) { }
+
+        public override void Action()
+        {
+            if (GameManager.Instance.GetCoins(Team.Red) > 2) {
+                n_true.Action();
+            }
+            else {
+                n_false.Action();
+            }
+        }
+    }
+
+    class IAAttack : IANode
+    {
+        public override void Action()
+        {
+            Debug.Log("adios");
+            GameManager.Instance.UseAction();
+        }
+    }
+
+    class IADeploy : IANode
+    {
+        public override void Action()
+        {
+            Debug.Log("hola");
+            GameManager.Instance.UseAction();
+        }
+    }
+
+    /*
+    private IEnumerator UpdateIA()
+    {
+        yield return new WaitForEndOfFrame();
+        n_root.Action();
+    }
+
 
     interface IANode
     {
-        void init();
-        NodeUpdateResult Update();
-
+        void Init();
+        NodeActionResult Action();
     }
 
-    class IASecunceNode : IANode
+    class IASequenceNode : IANode
     {
-        public IASecunceNode(IList<IANode> i_nodes)
+        public IASequenceNode(IList<IANode> i_nodes)
         {
             n_subNodes = i_nodes;
         }
-        public void init()
+
+        public void Init()
         {
             foreach (IANode n in n_subNodes)
             {
-                n.init();
+                n.Init();
             }
         }
 
-        public NodeUpdateResult Update()
+        public NodeActionResult Action()
         {
             foreach (IANode n in n_subNodes)
             {
+                NodeActionResult subsubNodeResult =  n.Action();
 
-                //Aqui va el timer
-                NodeUpdateResult subsubNodeResult =  n.Update();
-
-                if(subsubNodeResult == NodeUpdateResult.Running)
-                    return NodeUpdateResult.Running;
-                else if(subsubNodeResult == NodeUpdateResult.Failure)
-                    return NodeUpdateResult.Failure;
+                if(subsubNodeResult == NodeActionResult.Running)
+                    return NodeActionResult.Running;
+                else if(subsubNodeResult == NodeActionResult.Failure)
+                    return NodeActionResult.Failure;
 
             }
-            //Aqui va el timer
-            return NodeUpdateResult.Success;
+            return NodeActionResult.Success;
         }
 
         IList<IANode> n_subNodes;
     }
 
+    /*
     class IASelectEnemyTroopNode : IANode
     {
         IAInfo aiInfo;
@@ -69,12 +154,13 @@ public class IAEnemy : IABase
             aiInfo = IAinfo;
             selectedEnemyTroop = aiInfo.selectedEnemyTroop;
         }
-        public void init()
+
+        public void Init()
         {
            
         }
 
-        public NodeUpdateResult Update()
+        public NodeActionResult Action()
         {
            if (selectedEnemyTroop == null)
            {
@@ -91,10 +177,10 @@ public class IAEnemy : IABase
             }
 
 
-           if(selectedEnemyTroop == null) return NodeUpdateResult.Failure;
+           if(selectedEnemyTroop == null) return NodeActionResult.Failure;
 
            Debug.Log("Tropa ALIADA seleccionada" + selectedEnemyTroop);
-           return NodeUpdateResult.Success;
+           return NodeActionResult.Success;
         }
     }
     class IASelectTroopNode : IANode
@@ -108,12 +194,12 @@ public class IAEnemy : IABase
             selectedTroop = iaInfo.selectedTroop;
 
         }
-        public void init()
+        public void Init()
         {
            
         }
 
-        public NodeUpdateResult Update()
+        public NodeActionResult Action()
         {
        
             int most_powerfull = 0;
@@ -161,7 +247,7 @@ public class IAEnemy : IABase
 
                 Debug.Log(selectedTroop);
                 GameManager.Instance.UseAction();
-                return NodeUpdateResult.Failure;
+                return NodeActionResult.Failure;
 
             }
             else
@@ -169,77 +255,49 @@ public class IAEnemy : IABase
                 
                 Debug.Log("Nueva tropa seleccionada"+selectedTroop);
                 GameManager.Instance.UseAction();
-                return NodeUpdateResult.Success;
+                return NodeActionResult.Success;
             }
         }
             
     }
-    
+    */
 
-    IANode n_root;
-    [SerializeField]GameManager gm;
+    //    private IEnumerator InitializeIA()
+    //    {
+    //        // Wait for the end of the frame to ensure all components are loaded and rendered.
+    //        yield return new WaitForEndOfFrame();
 
-    private void Awake()
-    {
-       Debug.Assert(gm != null, "No hay GameManager Asignada a la IA");
-    }
+    //        List<IANode> secuenceNodeList = new List<IANode>();
+    //        /*
+    //         Crear Nodo para seleccionar unidad
+    //         Crear Nodo para seleccionar unidad enemiga
+    //         Crear Nodo para acercarse
+    //         Crear Nodo para Atacar
+    //         Crear Nodo para Comprar
+    //         */
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
+    //        //Cambiar este NODO por otro
+    //        //IANode nodeSeleccionarUnidad = new IASelectTroopNode(gm.GetIAInfo());
+    //        //IANode nodeSeleccionarUnidadEnemiga = new IASelectEnemyTroopNode(gm.GetIAInfo());
+    //        /* 
+    //         IANode nodeAcercarse = ...;
+    //         IANode nodeAtacar = ...;
+    //         IANode nodeComprar = ....;
+    //        */
 
-        StartCoroutine(InitializeIA());
-            
-        
-    }
-    private IEnumerator InitializeIA()
-    {
-        // Wait for the end of the frame to ensure all components are loaded and rendered.
-        yield return new WaitForEndOfFrame();
-
-        List<IANode> secuenceNodeList = new List<IANode>();
-        /*
-         Crear Nodo para seleccionar unidad
-         Crear Nodo para seleccionar unidad enemiga
-         Crear Nodo para acercarse
-         Crear Nodo para Atacar
-         Crear Nodo para Comprar
-         */
-
-        //Cambiar este NODO por otro
-        IANode nodeSeleccionarUnidad = new IASelectTroopNode(gm.GetIAInfo());
-        IANode nodeSeleccionarUnidadEnemiga = new IASelectEnemyTroopNode(gm.GetIAInfo());
-        /* 
-         IANode nodeAcercarse = ...;
-         IANode nodeAtacar = ...;
-         IANode nodeComprar = ....;
-        */
-
-        //Añadirlo a la lista
-        secuenceNodeList.Add(nodeSeleccionarUnidad);
-        secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
+    //        //Añadirlo a la lista
+    //        //secuenceNodeList.Add(nodeSeleccionarUnidad);
+    //        //secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
 
 
-        /* secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
-         secuenceNodeList.Add(nodeAcercarse);
-         secuenceNodeList.Add(nodeAtacar);
-         secuenceNodeList.Add(nodeComprar);*/
+    //        /* secuenceNodeList.Add(nodeSeleccionarUnidadEnemiga);
+    //         secuenceNodeList.Add(nodeAcercarse);
+    //         secuenceNodeList.Add(nodeAtacar);
+    //         secuenceNodeList.Add(nodeComprar);*/
 
-         n_root = new IASecunceNode(secuenceNodeList);
-         n_root.init();
-    }
-
-
-
-    private IEnumerator UpdateIA()
-    {
-        yield return new WaitForEndOfFrame();
-        n_root.Update();
-    }
-    // Update is called once per frame
-    void Update()
-    {
-        if(!gm.yourTurn) StartCoroutine(UpdateIA());
-        //StartCoroutine(UpdateIA());
-    }
+    //         n_root = new IASequenceNode(secuenceNodeList);
+    //         n_root.Init();
+    //    }
 }
+
+

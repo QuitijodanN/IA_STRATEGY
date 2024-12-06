@@ -26,7 +26,6 @@ public class BoardGrid : MonoBehaviour
     }
     void Start()
     {
-       
         gm = GameManager.Instance;
     }
 
@@ -60,6 +59,7 @@ public class BoardGrid : MonoBehaviour
         PaintPath(cells[0, 0], cells[rows - 1, 0], Team.Blue);
         PaintPath(cells[0, columns - 1], cells[rows - 1, columns - 1], Team.Red);
 
+        /*
         // Spawn test troops
         int col_for_ally = 0;
         int col_for_enemies = columns - 1;
@@ -72,7 +72,7 @@ public class BoardGrid : MonoBehaviour
             SpawnTroop(gm.enemyTroopPrefabs[i], cells[rows - 1, col_for_enemies]);
             col_for_enemies--;
         }
-        ActualizeInfluence();
+        ActualizeInfluence();*/
     }
 
     public void ActualizeInfluence()

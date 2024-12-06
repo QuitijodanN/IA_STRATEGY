@@ -1,4 +1,9 @@
-using UnityEngine;
+public enum NodeActionResult
+{
+    Running,
+    Success,
+    Failure
+}
 
 public enum Selection
 {
