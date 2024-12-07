@@ -1,9 +1,12 @@
 
+using System;
 using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Audio;
+
+
 
 public class BoardGrid : MonoBehaviour
 {
@@ -32,6 +35,12 @@ public class BoardGrid : MonoBehaviour
         gm = GameManager.Instance;
     }
 
+    public Cell[,] GetBoard()
+    {
+        return cells;
+    }
+
+
     // -----------------------------------------------------------------------------------------------------------------------------------------
     // -- INIT FUNCTIONS
     // -----------------------------------------------------------------------------------------------------------------------------------------
@@ -57,6 +66,7 @@ public class BoardGrid : MonoBehaviour
         {
             return null;
         }
+        //Debug.Log(cells[row, col]);
         return cells[row, col];
     }
     private IEnumerator InitializeCells()
@@ -234,6 +244,8 @@ public class BoardGrid : MonoBehaviour
         if (dropClip != null) {
             gm.audioSource.PlayOneShot(dropClip);
         }
+       
+
         Troop troop = Instantiate(troopPrefab, cell.transform.position, Quaternion.identity);
         if (troop is not Bomb) {
             gm.AddTroop(troop);
