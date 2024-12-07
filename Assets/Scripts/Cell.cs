@@ -32,6 +32,8 @@ public class Cell : MonoBehaviour
         this.col = col;
     }
 
+
+
     public void SetActiveSelection(Selection s)
     {
         activeSelection = s;

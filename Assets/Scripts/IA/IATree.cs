@@ -1,4 +1,6 @@
 
+using System;
+
 public class IANode
 {
     public IANode() { }
@@ -8,6 +10,7 @@ public class IANode
 public class IASequenceNode : IANode
 {
     protected IANode n_true, n_false;
+    
 
     public IASequenceNode(IANode nodeTrue, IANode nodeFalse)
     {

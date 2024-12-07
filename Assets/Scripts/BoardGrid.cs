@@ -1,5 +1,7 @@
 
 using System.Collections;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -11,7 +13,8 @@ public class BoardGrid : MonoBehaviour
     public Troop selectedTroop = null;
 
     private Cell[,] cells;
-    private float[,] influenceMap;
+    public float[,] influenceMap;
+    public float sumaMapaInfluencia;
 
     [SerializeField] private AudioClip selectClip;
     [SerializeField] private AudioClip moveClip;
@@ -49,7 +52,13 @@ public class BoardGrid : MonoBehaviour
             }
         }
     }
-
+    public Cell getCell(int row, int col) {
+        if (row < 0 || row >= rows || col < 0 || col >= columns)
+        {
+            return null;
+        }
+        return cells[row, col];
+    }
     private IEnumerator InitializeCells()
     {
         // Wait for the end of the frame to ensure all components are loaded and rendered.
@@ -77,6 +86,7 @@ public class BoardGrid : MonoBehaviour
 
     public void ActualizeInfluence()
     {
+        sumaMapaInfluencia = 0;
         influenceMap = new float[rows, columns];
 
         for (int row = 0; row < rows; row++)
@@ -96,6 +106,7 @@ public class BoardGrid : MonoBehaviour
                         TroopInfluence(row, col, value);
                 }
                 influenceMap[row, col] += value;
+                sumaMapaInfluencia += value;
             }
         }
         for (int row = 0; row < rows; row++)
@@ -105,7 +116,7 @@ public class BoardGrid : MonoBehaviour
             {
                 line += " / " + influenceMap[row, col].ToString();
             }
-            Debug.Log(line);
+            //Debug.Log(line);
         }
     }
 
@@ -350,5 +361,14 @@ public class BoardGrid : MonoBehaviour
         return counter;
     }
 
-    
+    public BoardGrid CopiaProfunda()
+    {
+        using (MemoryStream ms = new MemoryStream())
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(ms, this);
+            ms.Position = 0;
+            return (BoardGrid)formatter.Deserialize(ms);
+        }
+    }
 }
