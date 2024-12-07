@@ -82,7 +82,20 @@ public class IAEnemy : MonoBehaviour
     {
         public override void Action()
         {
-            Debug.Log("adios");
+            IAInfo aiInfo = GameManager.Instance.GetIAInfo();
+            Troop selectedTroop = aiInfo.selectedTroop;
+            Troop selectedEnemyTroop = aiInfo.selectedEnemyTroop;
+
+            if (selectedTroop != null && selectedEnemyTroop != null)
+            {
+                GameManager.Instance.board.AttackWithTroop(selectedTroop, selectedEnemyTroop);
+                Debug.Log("Attack executed");
+            }
+            else
+            {
+                Debug.Log("No valid troops selected for attack");
+            }
+
             GameManager.Instance.UseAction();
         }
     }

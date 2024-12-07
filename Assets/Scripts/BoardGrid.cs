@@ -1,5 +1,6 @@
 
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -349,6 +350,42 @@ public class BoardGrid : MonoBehaviour
         }
         return counter;
     }
+    public List<Cell> GetCellsInRange(Cell center, int range)
+    {
+        List<Cell> cellsInRange = new List<Cell>();
 
-    
+        for (int offsetX = -range; offsetX <= range; offsetX++)
+        {
+            for (int offsetY = -range; offsetY <= range; offsetY++)
+            {
+                int currentX = center.GetGridPosition().col + offsetX;
+                int currentY = center.GetGridPosition().row + offsetY;
+
+                if (currentX >= 0 && currentX < columns && currentY >= 0 && currentY < rows)
+                {
+                    cellsInRange.Add(cells[currentY, currentX]);
+                }
+            }
+        }
+        return cellsInRange;
+    }
+    public List<Troop> GetEnemiesInAttackRange(Troop attacker)
+    {
+        List<Troop> enemiesInRange = new List<Troop>();
+
+        // Obtener todas las celdas dentro del rango de ataque
+        List<Cell> cellsInRange = GameManager.Instance.board.GetCellsInRange(attacker.transform.GetComponentInParent<Cell>(), attacker.attackRange);
+
+        foreach (Cell cell in cellsInRange)
+        {
+            Troop enemy = cell.GetComponentInChildren<Troop>();
+            if (enemy != null && enemy.team != attacker.team)
+            {
+                enemiesInRange.Add(enemy);
+            }
+        }
+
+        return enemiesInRange;
+    }
+
 }
