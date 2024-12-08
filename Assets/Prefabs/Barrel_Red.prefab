@@ -126,12 +126,12 @@ MonoBehaviour:
   moveRange: 0
   attackRange: 1
   health: 0
-  damage: 3
-  cost: 2
+  damage: 8
+  cost: 10
   team: 2
   deathPrefab: {fileID: 6479219452193774015, guid: a42b246bdce431943bc4efb4362c76cb, type: 3}
+  hitClip: {fileID: 8300000, guid: 194327b3572aa874cb25e7ab19d73f0f, type: 3}
   offset: {x: 0, y: -0.8, z: 0}
   healthDotPrefab: {fileID: 2058362011211586, guid: 771f90059f2e99242b26d43441a5ee97, type: 3}
   dotSpacing: 0.2
-  hitClip: {fileID: 8300000, guid: 194327b3572aa874cb25e7ab19d73f0f, type: 3}
   explosionSecondDelay: 2

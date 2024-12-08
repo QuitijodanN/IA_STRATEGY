@@ -1,8 +1,13 @@
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Audio;
+
+
 
 public class BoardGrid : MonoBehaviour
 {
@@ -12,7 +17,8 @@ public class BoardGrid : MonoBehaviour
     public Troop selectedTroop = null;
 
     private Cell[,] cells;
-    private float[,] influenceMap;
+    public float[,] influenceMap;
+    public float sumaMapaInfluencia;
 
     [SerializeField] private AudioClip selectClip;
     [SerializeField] private AudioClip moveClip;
@@ -30,6 +36,12 @@ public class BoardGrid : MonoBehaviour
         gm = GameManager.Instance;
     }
 
+    public Cell[,] GetBoard()
+    {
+        return cells;
+    }
+
+
     // -----------------------------------------------------------------------------------------------------------------------------------------
     // -- INIT FUNCTIONS
     // -----------------------------------------------------------------------------------------------------------------------------------------
@@ -41,7 +53,7 @@ public class BoardGrid : MonoBehaviour
             for (int col = 0; col < columns; col++) {
                 // Crear una instancia del prefab de celda
                 Cell cell = Instantiate(cellPrefab, new Vector3(col - 6.5f, -row + 3.5f, 0), Quaternion.identity);
-                // Establecer el objeto como hijo de la cuadrícula para mantener la jerarquía limpia
+                // Establecer el objeto como hijo de la cuadrï¿½cula para mantener la jerarquï¿½a limpia
                 cell.transform.SetParent(transform);
                 cell.SetGridPosition(this, row, col);
 
@@ -50,7 +62,14 @@ public class BoardGrid : MonoBehaviour
             }
         }
     }
-
+    public Cell getCell(int row, int col) {
+        if (row < 0 || row >= rows || col < 0 || col >= columns)
+        {
+            return null;
+        }
+        //Debug.Log(cells[row, col]);
+        return cells[row, col];
+    }
     private IEnumerator InitializeCells()
     {
         // Wait for the end of the frame to ensure all components are loaded and rendered.
@@ -78,6 +97,7 @@ public class BoardGrid : MonoBehaviour
 
     public void ActualizeInfluence()
     {
+        sumaMapaInfluencia = 0;
         influenceMap = new float[rows, columns];
 
         for (int row = 0; row < rows; row++)
@@ -97,6 +117,7 @@ public class BoardGrid : MonoBehaviour
                         TroopInfluence(row, col, value);
                 }
                 influenceMap[row, col] += value;
+                sumaMapaInfluencia += value;
             }
         }
         for (int row = 0; row < rows; row++)
@@ -106,7 +127,7 @@ public class BoardGrid : MonoBehaviour
             {
                 line += " / " + influenceMap[row, col].ToString();
             }
-            Debug.Log(line);
+            //Debug.Log(line);
         }
     }
 
@@ -152,7 +173,7 @@ public class BoardGrid : MonoBehaviour
         int x = gridPosition.x;
         int y = gridPosition.y;
 
-        // Función local para activar la selección si está dentro de los límites
+        // Funciï¿½n local para activar la selecciï¿½n si estï¿½ dentro de los lï¿½mites
         bool ActivateMovementIfInBounds(int i, int j)
         {
             if (i >= 0 && i < cells.GetLength(0) && j >= 0 && j < cells.GetLength(1)) {
@@ -224,6 +245,8 @@ public class BoardGrid : MonoBehaviour
         if (dropClip != null) {
             gm.audioSource.PlayOneShot(dropClip);
         }
+       
+
         Troop troop = Instantiate(troopPrefab, cell.transform.position, Quaternion.identity);
         if (troop is not Bomb) {
             gm.AddTroop(troop);
@@ -388,4 +411,14 @@ public class BoardGrid : MonoBehaviour
         return enemiesInRange;
     }
 
+    public BoardGrid CopiaProfunda()
+    {
+        using (MemoryStream ms = new MemoryStream())
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(ms, this);
+            ms.Position = 0;
+            return (BoardGrid)formatter.Deserialize(ms);
+        }
+    }
 }

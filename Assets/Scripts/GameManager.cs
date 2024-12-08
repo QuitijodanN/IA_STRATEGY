@@ -9,7 +9,7 @@ public class GameManager : MonoBehaviour
     public bool attacking = false;
     public bool yourTurn = true;
 
-    public List<Troop> allyTroopPrefabs = new List<Troop>();
+    public List<Troop> allyTroopPrefabs  = new List<Troop>();
     public List<Troop> enemyTroopPrefabs = new List<Troop>();
     public BoardGrid board;
     [HideInInspector] public AudioSource audioSource;
@@ -30,8 +30,11 @@ public class GameManager : MonoBehaviour
 
 
     private IAInfo aiInfo;
+    
+    //Cambiar a private
     private int playerCoins;
-    private int enemyCoins;
+    private  int enemyCoins;
+    
     private int actions;
     private int turn = 0;
 
@@ -154,7 +157,7 @@ public class GameManager : MonoBehaviour
     public void UseAction()
     {
         actions--;
-
+        board.ActualizeInfluence();
         if (yourTurn)
             blueActions.DisplayValue(actions);
         else
