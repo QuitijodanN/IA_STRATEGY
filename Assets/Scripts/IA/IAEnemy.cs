@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEditor.PlayerSettings;
+using static UnityEngine.InputManagerEntry;
 using static UnityEngine.Rendering.DebugUI.Table;
 using static UnityEngine.UI.Image;
 
@@ -59,12 +61,12 @@ public class IAEnemy : MonoBehaviour
         IAAttack    attack  = new IAAttack();
         IASkipTurn  skip    = new IASkipTurn();
         IAMove      move    = new IAMove();
-
+        //
 
         // atamos nodos a los padres (sequence nodes)
-        IACanAttack     canAttack   = new IACanAttack(attack,move);
+        IACanAttack canAttack   = new IACanAttack(attack,move);
         IAHaveTroops    haveTroops  = new IAHaveTroops(canAttack,skip);
-        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, haveTroops);
+        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, attack);//voy a testear el de ataque si funcion
 
         n_root = enoughGold;
     }
@@ -112,15 +114,15 @@ public class IAEnemy : MonoBehaviour
         public override void Action()
         {
             /*
-             Si puede atacar nodo hoja hit
+             Si puede atacar nodo hoja attack
              else Nodo elecci�n pintar
              */
             foreach (Troop t in GameManager.Instance.enemyTroops)
             {
                 //Debug.Log(t.transform.parent.name);
             }
-            
-        }
+
+        }//
     }
 
 
@@ -133,25 +135,266 @@ public class IAEnemy : MonoBehaviour
     {
         public override void Action()
         {
-            IAInfo aiInfo = GameManager.Instance.GetIAInfo();
-            Troop selectedTroop = aiInfo.selectedTroop;
-            Troop selectedEnemyTroop = aiInfo.selectedEnemyTroop;
+            BoardGrid board = GameManager.Instance.board; // Referencia al tablero
+            Cell[,] grid = board.GetBoard();
 
-            if (selectedTroop != null && selectedEnemyTroop != null)
+            GameManager.Instance.enemyTroops = GameManager.Instance.GetTroops(Team.Red); // Todas las tropas enemigas
+            List<(Troop attacker, Troop target)> attackPairs = new List<(Troop, Troop)>(); // Lista de ataques posibles
+            
+            foreach (Troop t in GameManager.Instance.enemyTroops)
             {
-                GameManager.Instance.board.AttackWithTroop(selectedTroop, selectedEnemyTroop);
-                Debug.Log("Attack executed");
+                
+                
+                int multiplier = t.attackRange;
+
+                Cell currentCell = t.GetComponentInParent<Cell>();
+                (int, int) pos = currentCell.GetGridPosition(); // Usamos GetGridPosition del Cell
+                
+                Debug.Log(multiplier);
+                for (int x = -1*multiplier; x <2 * multiplier; x++)
+                {
+                    for (int y = -1*multiplier; y <2 * multiplier; y++)
+                    {
+                        if (x == 0 && y == 0) continue; // Ignoramos la celda de origen
+
+                        int targetX = pos.Item1 + x ;
+                        int targetY = pos.Item2 + y ;
+                        Debug.Log($"Target: {targetX}, {targetY}");
+
+                        if (IsValidPosition(targetX, targetY, grid)) // Validamos coordenadas con la matriz
+                        {
+                            Debug.Log("Esta la celda dentro del tablero");
+                            Cell targetCell = grid[targetX, targetY];
+                            if (targetCell.transform.childCount != 0)
+                            {
+                                Debug.Log("Hay un hijo");
+                                Troop target = targetCell.transform.GetChild(0).GetComponent<Troop>();
+                                if (target.team == Team.Blue) // Encontramos una tropa enemiga
+                                {
+                                    Debug.Log("Target encontrado");
+                                    attackPairs.Add((t, target));
+                                }
+                                else
+                                {
+                                    Debug.Log("No hay tropa enemiga");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log("No es una posición válida");
+                        }
+                    }
+                }
+            }
+
+            // Lógica para seleccionar el mejor ataque
+            if (attackPairs.Count > 0)
+            {
+
+                (Troop , Troop) atacantes = SelectBestAttack(attackPairs);
+                Troop attacker = atacantes.Item1;
+                Troop target = atacantes.Item2;
+                Debug.Log($"{attacker.name} ataca a {target.name}");
+                
+                // Realizamos el ataque
+                if (attacker is Tower)
+                {
+                    GameManager.Instance.board.AttackWithTroop(attacker, target);
+                }
+                else
+                {
+                    attacker.Attack(target);
+                }
+
+                //GameManager.Instance.UseAction(); // Acción consumida
             }
             else
             {
-                Debug.Log("No valid troops selected for attack");
+                Debug.Log("No hay ataques posibles");
             }
+
+            GameManager.Instance.UseAction();//ESTO CUANDO SE META EN EL ARBOL BIEN HAY QUE QUITARLO DE AQUI
+            Debug.Log("Ataque realizado");
+        }
+
+        /*private (int range, int multiplier) GetAttackPattern(Troop t)
+        {
+            // Define los patrones de ataque para cada tropa
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[0].cost) return (1, 1); // Caballero
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[1].cost) return (1, 2); // Arquero
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[2].cost) return (2, 1); // Torre
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[3].cost) return (3, 1); // Peón
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[4].cost) return (1, 1); // Barril
+
+            return (0, 0); // Sin rango
+        }*/
+
+        private bool IsValidPosition(int x, int y, Cell[,] grid)
+        {
+            // Comprueba si las coordenadas están dentro de los límites del tablero
+            return x >= 0 && x < grid.GetLength(0) && y >= 0 && y < grid.GetLength(1);
+        }
+
+        private (Troop attacker, Troop target) SelectBestAttack(List<(Troop attacker, Troop target)> attackPairs)
+        {
+            // Selecciona el primer ataque como ejemplo
+            // Puedes implementar una lógica más avanzada aquí
+            return attackPairs[0];
+        }
+    }
+    /*
+    class IAAttack : IANode
+    {
+        public override void Action()
+        {
+            List<Troop> enemyTroops = new List<Troop>() ;
+
+            //esto es del icanattack 
+            GameManager.Instance.enemyTroops= GameManager.Instance.GetTroops(Team.Red);
+            Cell[,] tablero = GameManager.Instance.board.GetBoard();
+            foreach (Troop t in GameManager.Instance.enemyTroops)
+            {
+                if(t == GameManager.Instance.enemyTroopPrefabs[0])
+                {
+                    Debug.Log("Caballero");
+                    (int, int)pos = t.GetComponentInParent<Cell>().GetGridPosition();
+                    for (int x = -1; x < 2; x++)
+                    {
+                        for (int y = -1; y < 2; y++)
+                        {
+                            if (x == 0 && y == 0) continue;
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.GetLength(0) && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.GetLength(1))
+                            {
+                                if (tablero[pos.Item1 + x, pos.Item2 + y].transform.childCount != 0)
+                                {
+                                    if (tablero[pos.Item1 + x, pos.Item2 + y].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
+                                    {
+                                        Debug.Log("puedo atacar");
+                                        enemyTroops.Add(t);
+                                        //esto es del icanattack
+                                        //aqui hacer add de la tropa seleccionada en la lista de tropas seleccionadas que pueden atacar
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                            
+                }
+                if(t == GameManager.Instance.enemyTroopPrefabs[1])
+                {
+                    Debug.Log("Arquero");
+                    (int, int)pos = t.GetComponentInParent<Cell>().GetGridPosition();
+                    for (int x = -1; x < 2; x++)
+                    {
+                        for (int y = -1; y < 2; y++)
+                        {
+                            if (x == 0 && y == 0) continue;
+                            if (pos.Item1 + x * 2 >= 0 && pos.Item1 + x * 2 < tablero.GetLength(0) && pos.Item2 + y * 2 >= 0 && pos.Item2 + y * 2 < tablero.GetLength(1))
+                            {
+                                if (tablero[pos.Item1 + x * 2, pos.Item2 + y * 2].transform.childCount != 0)
+                                {
+                                    if (tablero[pos.Item1 + x * 2, pos.Item2 + y * 2].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
+                                    {
+                                        Debug.Log("puedo atacar");
+                                        enemyTroops.Add(t);
+                                        //esto es del icanattack
+                                        //aqui hacer add de la tropa seleccionada en la lista de tropas seleccionadas que pueden atacar
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                            
+                }
+                if (t == GameManager.Instance.enemyTroopPrefabs[2])
+                {
+                    Debug.Log("Torre");
+                    (int, int) pos = t.GetComponentInParent<Cell>().GetGridPosition();
+                    for (int x = -2; x < 3; x++)
+                    {
+                        for (int y = -2; y < 3; y++)
+                        {
+                            if (x == 0 && y == 0) continue;
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.GetLength(0) && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.GetLength(1))
+                            {
+                                if (tablero[pos.Item1 + x, pos.Item2 + y].transform.childCount != 0)
+                                {
+                                    if (tablero[pos.Item1 + x, pos.Item2 + y].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
+                                    {
+                                        Debug.Log("puedo atacar");
+                                        enemyTroops.Add(t);
+                                        //esto es del icanattack
+                                        //aqui hacer add de la tropa seleccionada en la lista de tropas seleccionadas que pueden atacar
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+                if (t == GameManager.Instance.enemyTroopPrefabs[3])
+                {
+                    Debug.Log("Pawn");
+                    (int, int) pos = t.GetComponentInParent<Cell>().GetGridPosition();
+                    for (int x = -3; x < 4; x++)
+                    {
+                        for (int y = -3; y < 4; y++)
+                        {
+                            if (x == 0 && y == 0) continue;
+                            if (pos.Item1 + x * 3 >= 0 && pos.Item1 + x * 3 < tablero.GetLength(0) && pos.Item2 + y * 3 >= 0 && pos.Item2 + y * 3 < tablero.GetLength(1))
+                            {
+                                if (tablero[pos.Item1 + x * 3, pos.Item2 + y * 3].transform.childCount != 0)
+                                {
+                                    if (tablero[pos.Item1 + x * 3, pos.Item2 + y * 3].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
+                                    {
+                                        Debug.Log("puedo atacar");
+                                        enemyTroops.Add(t);
+                                        //esto es del icanattack
+                                        //aqui hacer add de la tropa seleccionada en la lista de tropas seleccionadas que pueden atacar
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (t == GameManager.Instance.enemyTroopPrefabs[4])
+                {
+                    Debug.Log("Barril");
+                    (int, int) pos = t.GetComponentInParent<Cell>().GetGridPosition();
+                    for (int x = -1; x < 2; x++)
+                    {
+                        for (int y = -1; y < 2; y++)
+                        {
+                            if (x == 0 && y == 0) continue;
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.GetLength(0) && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.GetLength(1))
+                            {
+                                if (tablero[pos.Item1 + x, pos.Item2 + y].transform.childCount != 0)
+                                {
+                                    if (tablero[pos.Item1 + x, pos.Item2 + y].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
+                                    {
+                                        Debug.Log("puedo atacar");
+                                        enemyTroops.Add(t);
+                                        //esto es del icanattack
+                                        //aqui hacer add de la tropa seleccionada en la lista de tropas seleccionadas que pueden atacar
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Debug.Log(t.transform.parent.name);//
+            }
+            
 
             GameManager.Instance.UseAction();
             Debug.Log("Atacar");
-            //GameManager.Instance.UseAction();
+            
         }
     }
+    */
 
     class IADeploy : IANode
     {
@@ -281,7 +524,7 @@ public class IAEnemy : MonoBehaviour
             valorInfluencia = tablero.sumaMapaInfluencia;
             float copySumaInfluencia = valorInfluencia;
             previuosInfluence = copySumaInfluencia;
-
+            
 
             //Caballero
             /*
@@ -487,9 +730,9 @@ public class IAEnemy : MonoBehaviour
 
 
                     //Comprobar si puede atacar enemigos
-                    for (int x = -3; x < 4; x++)
+                    for (int x = -1; x < 2; x++)
                     {
-                        for (int y = -3; y < 4; y++)
+                        for (int y = -1; y < 2; y++)
                         {
                             if (x == 0 && y == 0) continue;
 
@@ -639,7 +882,7 @@ public class IAEnemy : MonoBehaviour
                     
 
                 }
-                
+
             }
 
             previusBestPlay = List_score_pos[0].Item1.Item1;
@@ -671,8 +914,8 @@ public class IAEnemy : MonoBehaviour
            
 
             GameManager.Instance.UseAction();
-           
-           
+
+
         }
     }
 
@@ -680,8 +923,47 @@ public class IAEnemy : MonoBehaviour
     {
         public override void Action()
         {
-            Debug.Log("Mover");
-            //GameManager.Instance.UseAction();
+            Debug.Log("Mover IA");
+
+            // Referencia al GameManager y Board
+            GameManager gm = GameManager.Instance;
+            BoardGrid board = gm.board;
+
+            // Obtener todas las tropas de la IA en el tablero
+            List<Troop> aiTroops = gm.GetTroops(Team.Red);
+
+            foreach (Troop troop in aiTroops)
+            {
+                // Verificar si la tropa puede moverse
+                //if (!troop.HasActionLeft()) continue;
+
+                // Obtener la celda actual de la tropa
+                Cell currentCell = troop.transform.GetComponentInParent<Cell>();
+
+                // Obtener celdas disponibles para moverse dentro del rango
+                List<Cell> movementOptions = board.GetCellsInRange(currentCell, troop.moveRange);
+
+                // Filtrar celdas ocupadas
+                movementOptions.RemoveAll(cell => cell.transform.childCount > 0);
+
+                if (movementOptions.Count > 0)
+                {
+                    // Replace the line causing the error with the following:
+                    Cell targetCell = movementOptions[UnityEngine.Random.Range(0, movementOptions.Count)];
+                    //
+                    // Mover la tropa
+                    board.MoveTroop(troop, targetCell);
+
+                    Debug.Log($"Tropa {troop.name} movida a {targetCell.GetGridPosition()}");
+                    return; // Terminar después de mover una tropa
+                }
+            }
+            //bucle que recorra todas las tropas de la ia
+            //por cada tropa hay que usar el a* para ver la distancia con las tropas enemigas
+            //guardarse la que esta a menor distancia, puede haber varias a la misma(tro bucle en e cual me voy a quedar con la que mas cerca esté)
+            //si hay empate, tener en cuenta cual es la que pinta más/la que mas dinero vale
+            
+            Debug.Log("No hay tropas de IA que puedan moverse.");
         }
     }
 

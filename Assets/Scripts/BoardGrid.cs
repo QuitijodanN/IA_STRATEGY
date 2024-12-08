@@ -277,6 +277,7 @@ public class BoardGrid : MonoBehaviour
 
     public void AttackWithTroop(Troop troop, Troop target)
     {
+        Debug.Log(troop, target);
         if (troop != null) {
             //Attack
             if (troop is Tower) {
@@ -291,6 +292,7 @@ public class BoardGrid : MonoBehaviour
                 else if (troop.transform.GetComponentInParent<Cell>().GetGridPosition().col > target.transform.GetComponentInParent<Cell>().GetGridPosition().col) {
                     troop.transform.GetComponent<SpriteRenderer>().flipX = true;
                 }
+
                 selectedTroop.Attack(target);
             }
             gm.UseAction();
@@ -373,6 +375,10 @@ public class BoardGrid : MonoBehaviour
         }
         return counter;
     }
+    // -----------------------------------------------------------------------------------------------------------------------------------------
+    // -- TREE NODES FUNCTIONS
+    // -----------------------------------------------------------------------------------------------------------------------------------------
+
     public List<Cell> GetCellsInRange(Cell center, int range)
     {
         List<Cell> cellsInRange = new List<Cell>();
@@ -421,4 +427,6 @@ public class BoardGrid : MonoBehaviour
             return (BoardGrid)formatter.Deserialize(ms);
         }
     }
+
+    
 }
