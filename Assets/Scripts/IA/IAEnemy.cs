@@ -65,7 +65,7 @@ public class IAEnemy : MonoBehaviour
         // atamos nodos a los padres (sequence nodes)
         IACanAttack     canAttack   = new IACanAttack(attack,move);
         IAHaveTroops    haveTroops  = new IAHaveTroops(canAttack,skip);
-        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, haveTroops);
+        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, attack);
 
         n_root = enoughGold;
     }
@@ -653,6 +653,8 @@ public class IAEnemy : MonoBehaviour
 
             GameManager.Instance.board.SpawnTroop(jugada.Item1,GameManager.Instance.board.getCell(jugada.Item2.Item1,jugada.Item2.Item2));
             GameManager.Instance.SpendCoins(jugada.Item1.cost, Team.Red);
+
+            //GameManager.Instance.UseAction();
         }
     }
 
@@ -697,10 +699,11 @@ public class IAEnemy : MonoBehaviour
                             actualTroop = ETroop;
                     }
                 }
-                Cell destination = GameManager.Instance.board.getCell(path[0].gridY, path[0].gridX);
+                Cell destination = GameManager.Instance.board.getCell(path[1].gridY, path[1].gridX);
                 actualTroop.MoveToCell(destination);
 
             }
+            //GameManager.Instance.UseAction();
 
         }
         public void OnPathFound(Node[] newPath, bool pathSuccessful)
@@ -728,6 +731,7 @@ public class IAEnemy : MonoBehaviour
         public override void Action()
         {
             Debug.Log("Pasar turno");
+            //GameManager.Instance.UseAction();
         }
     }
 
