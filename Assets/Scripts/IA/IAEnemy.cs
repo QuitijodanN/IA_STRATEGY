@@ -66,7 +66,7 @@ public class IAEnemy : MonoBehaviour
         // atamos nodos a los padres (sequence nodes)
         IACanAttack     canAttack   = new IACanAttack(attack,move);
         IAHaveTroops    haveTroops  = new IAHaveTroops(canAttack,skip);
-        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, move);
+        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, haveTroops);
 
         n_root = enoughGold;
     }
@@ -113,15 +113,71 @@ public class IAEnemy : MonoBehaviour
 
         public override void Action()
         {
+            BoardGrid board = GameManager.Instance.board; // Referencia al tablero
+            Cell[,] grid = board.GetBoard();
+            List<(Troop attacker, Troop target)> attackPairs = new List<(Troop, Troop)>(); // Lista de ataques posibles
             /*
              Si puede atacar nodo hoja hit
              else Nodo elección pintar
              */
             foreach (Troop t in GameManager.Instance.enemyTroops)
             {
-                //Debug.Log(t.transform.parent.name);
+                int multiplier = t.attackRange;
+
+                Cell currentCell = t.GetComponentInParent<Cell>();
+                (int, int) pos = currentCell.GetGridPosition(); // Usamos GetGridPosition del Cell
+
+                Debug.Log(multiplier);
+                for (int x = -1 * multiplier; x < 2 * multiplier; x++)
+                {
+                    for (int y = -1 * multiplier; y < 2 * multiplier; y++)
+                    {
+                        if (x == 0 && y == 0) continue; // Ignoramos la celda de origen
+
+                        int targetX = pos.Item1 + x;
+                        int targetY = pos.Item2 + y;
+                        Debug.Log($"Target: {targetX}, {targetY}");
+
+                        if (IsValidPosition(targetX, targetY, grid)) // Validamos coordenadas con la matriz
+                        {
+                            Debug.Log("Esta la celda dentro del tablero");
+                            Cell targetCell = grid[targetX, targetY];
+                            if (targetCell.transform.childCount != 0)
+                            {
+                                Debug.Log("Hay un hijo");
+                                Troop target = targetCell.transform.GetChild(0).GetComponent<Troop>();
+                                if (target.team == Team.Blue) // Encontramos una tropa enemiga
+                                {
+                                    Debug.Log("Target encontrado");
+                                    attackPairs.Add((t, target));
+                                }
+                                else
+                                {
+                                    Debug.Log("No hay tropa enemiga");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log("No es una posición válida");
+                        }
+                    }
+                }
             }
-            
+            if (attackPairs.Count > 0)
+            {
+                IAAttack attackNode = n_true as IAAttack;
+                attackNode.SetValues(attackPairs);
+                n_true.Action();
+            }                
+            else 
+                n_false.Action();
+
+        }
+        private bool IsValidPosition(int x, int y, Cell[,] grid)
+        {
+            // Comprueba si las coordenadas están dentro de los límites del tablero
+            return x >= 0 && x < grid.GetLength(0) && y >= 0 && y < grid.GetLength(1);
         }
     }
 
@@ -133,10 +189,54 @@ public class IAEnemy : MonoBehaviour
     // -----------------------------------------------------------------------------------------------------------------------------------------
     class IAAttack : IANode
     {
+        List<(Troop, Troop)> attackPairs; // Lista de ataques posibles        
+
+        public void SetValues(List<(Troop, Troop)> _attackPairs)
+        {
+            attackPairs = _attackPairs;
+
+        }
         public override void Action()
         {
-            Debug.Log("Atacar");
-            //GameManager.Instance.UseAction();
+            GameManager.Instance.enemyTroops = GameManager.Instance.GetTroops(Team.Red); // Todas las tropas enemigas     
+
+            // Lógica para seleccionar el mejor ataque
+            (Troop, Troop) atacantes = SelectBestAttack(attackPairs);
+            Troop attacker = atacantes.Item1;
+            Troop target = atacantes.Item2;
+            Debug.Log($"{attacker.name} ataca a {target.name}");
+
+            // Realizamos el ataque
+            if (attacker is Tower)
+            {
+                GameManager.Instance.board.AttackWithTroop(attacker, target);
+            }
+            else
+            {
+                attacker.Attack(target);
+            }
+
+            GameManager.Instance.UseAction();//ESTO CUANDO SE META EN EL ARBOL BIEN HAY QUE QUITARLO DE AQUI
+            Debug.Log("Ataque realizado");
+        }
+
+        /*private (int range, int multiplier) GetAttackPattern(Troop t)
+        {
+            // Define los patrones de ataque para cada tropa
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[0].cost) return (1, 1); // Caballero
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[1].cost) return (1, 2); // Arquero
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[2].cost) return (2, 1); // Torre
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[3].cost) return (3, 1); // Peón
+            if (t.cost == GameManager.Instance.enemyTroopPrefabs[4].cost) return (1, 1); // Barril
+
+            return (0, 0); // Sin rango
+        }*/        
+
+        private (Troop attacker, Troop target) SelectBestAttack(List<(Troop attacker, Troop target)> attackPairs)
+        {
+            // Selecciona el primer ataque como ejemplo
+            // Puedes implementar una lógica más avanzada aquí
+            return attackPairs[0];
         }
     }
 
@@ -474,9 +574,9 @@ public class IAEnemy : MonoBehaviour
 
 
                     //Comprobar si puede atacar enemigos
-                    for (int x = -3; x < 4; x++)
+                    for (int x = -1; x < 2; x++)
                     {
-                        for (int y = -3; y < 4; y++)
+                        for (int y = -1; y < 2; y++)
                         {
                             if (x == 0 && y == 0) continue;
 
@@ -742,9 +842,9 @@ public class IAEnemy : MonoBehaviour
             if (path.Length > 0 && index >= playerTroops.Count * enemyTroops.Count)
             {
                 Cell destination = GameManager.Instance.board.getCell(path[0].gridY, path[0].gridX);
-                actualTroop.MoveToCell(destination);
+
+                GameManager.Instance.board.MoveTroop(actualTroop, destination);
             }
-            GameManager.Instance.UseAction();
 
         }
 
