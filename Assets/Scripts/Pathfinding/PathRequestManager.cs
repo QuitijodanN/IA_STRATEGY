@@ -18,7 +18,7 @@ public class PathRequestManager : MonoBehaviour {
 		pathfinding = GetComponent<Pathfinding>();
 	}
 
-    public static void RequestPath(Node pathStart, Node pathEnd, Action<Node[], bool> callback, bool longDistance) {
+    public static void RequestPath((int, int) pathStart, (int, int) pathEnd, Action<Node[], bool> callback, bool longDistance) {
 		PathRequest newRequest = new PathRequest(pathStart,pathEnd,callback,longDistance);
 		instance.pathRequestQueue.Enqueue(newRequest);
 		instance.TryProcessNext(longDistance);
@@ -39,13 +39,13 @@ public class PathRequestManager : MonoBehaviour {
 	}
 
 	struct PathRequest {
-		public Node pathStart;
-		public Node pathEnd;
+		public (int, int) pathStart;
+		public (int, int) pathEnd;
 		public Action<Node[], bool> callback;
 		public bool longDistance;
 
 
-        public PathRequest(Node _start, Node _end, Action<Node[], bool> _callback, bool _longDistance) {
+        public PathRequest((int, int) _start, (int, int) _end, Action<Node[], bool> _callback, bool _longDistance) {
 			pathStart = _start;
 			pathEnd = _end;
 			callback = _callback;

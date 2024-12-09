@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEngine.Rendering.DebugUI.Table;
@@ -652,22 +653,74 @@ public class IAEnemy : MonoBehaviour
 
             GameManager.Instance.board.SpawnTroop(jugada.Item1,GameManager.Instance.board.getCell(jugada.Item2.Item1,jugada.Item2.Item2));
             GameManager.Instance.SpendCoins(jugada.Item1.cost, Team.Red);
-
-           
-
-            GameManager.Instance.UseAction();
-           
-           
         }
     }
 
     class IAMove : IANode
     {
+
+        Node[] path;
+        int steps;
+        Troop actualTroop;
+        bool change;
+
         public override void Action()
         {
             Debug.Log("Mover");
-            //GameManager.Instance.UseAction();
+            List<Troop> playerTroops = GameManager.Instance.playerTroops;
+            List<Troop> enemyTroops = GameManager.Instance.enemyTroops;
+
+            path = null;
+            steps = 1000;
+
+            actualTroop = null;
+            change = false;
+            
+            if (path == null && playerTroops.Count > 0 && enemyTroops.Count > 0)
+            {
+                foreach (Troop ETroop in enemyTroops)
+                {
+                    foreach (Troop PTroop in playerTroops)
+                    {
+                        Cell ECell = ETroop.transform.parent.GetComponent<Cell>();
+                        Cell PCell = PTroop.transform.parent.GetComponent<Cell>();
+
+                        (int, int) EPos = ECell.GetGridPosition();
+                        (int, int) PPos = PCell.GetGridPosition();
+
+                        if (ETroop.moveRange > 1)
+                            PathRequestManager.RequestPath(EPos, PPos, OnPathFound, true);
+                        else
+                            PathRequestManager.RequestPath(EPos, PPos, OnPathFound, false);
+
+                        if (change)
+                            actualTroop = ETroop;
+                    }
+                }
+                Cell destination = GameManager.Instance.board.getCell(path[0].gridY, path[0].gridX);
+                actualTroop.MoveToCell(destination);
+
+            }
+
         }
+        public void OnPathFound(Node[] newPath, bool pathSuccessful)
+        {
+            if (pathSuccessful)
+            {
+                if (path == null)
+                {
+                    path = newPath;
+                    steps = path.Length;
+
+                }
+                else if (steps > newPath.Length)
+                {
+                    path = newPath;
+                    steps = path.Length;
+                }   
+            }
+        }
+
     }
 
     class IASkipTurn : IANode
@@ -675,7 +728,6 @@ public class IAEnemy : MonoBehaviour
         public override void Action()
         {
             Debug.Log("Pasar turno");
-            GameManager.Instance.UseAction();
         }
     }
 

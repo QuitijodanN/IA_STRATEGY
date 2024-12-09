@@ -14,8 +14,11 @@ public class Pathfinding : MonoBehaviour {
 	}
 	
 	
-	public void StartFindPath(Node startPos, Node targetPos, bool longDistance) {
-		StartCoroutine(FindPath(startPos,targetPos,longDistance));
+	public void StartFindPath((int, int) startPos, (int, int) targetPos, bool longDistance) {
+		Node nodeStartPos = grid.grid[startPos.Item1, startPos.Item2];
+        Node nodeTargetPos = grid.grid[targetPos.Item1, targetPos.Item2];
+
+        StartCoroutine(FindPath(nodeStartPos, nodeTargetPos, longDistance));
 	}
 
     IEnumerator FindPath(Node startNode, Node targetNode, bool longDistance) {
