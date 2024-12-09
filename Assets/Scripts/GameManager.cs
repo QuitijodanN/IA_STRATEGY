@@ -133,6 +133,8 @@ public class GameManager : MonoBehaviour
     public void ChangeTurn()
     {
         yourTurn = !yourTurn;
+       
+        //board.GetColorCellAmount(Team.Red);
 
         if (yourTurn) {
             //turnText.text = "Es tu turno";
@@ -156,6 +158,7 @@ public class GameManager : MonoBehaviour
 
     public void UseAction()
     {
+        //Compruebas que hay amount de ambos colores
         actions--;
         board.ActualizeInfluence();
         if (yourTurn)

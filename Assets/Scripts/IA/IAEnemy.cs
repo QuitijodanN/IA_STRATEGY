@@ -64,9 +64,10 @@ public class IAEnemy : MonoBehaviour
 
 
         // atamos nodos a los padres (sequence nodes)
-        IACanAttack     canAttack   = new IACanAttack(attack,move);
-        IAHaveTroops    haveTroops  = new IAHaveTroops(canAttack,skip);
-        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, haveTroops);
+        IACanAttack     canAttack   = new IACanAttack  (attack,move);
+        IAHaveTroops    haveTroops  = new IAHaveTroops (canAttack, skip);
+        IASaveMoney     saveMoney   = new IASaveMoney  (haveTroops,deploy);
+        IAEnoughGold    enoughGold  = new IAEnoughGold (saveMoney, haveTroops);
 
         n_root = enoughGold;
     }
@@ -86,6 +87,26 @@ public class IAEnemy : MonoBehaviour
             else {
                 n_false.Action();
             }
+        }
+    }
+
+    class IASaveMoney : IASequenceNode
+    {
+        public IASaveMoney(IANode nodeTrue, IANode nodeFalse) : base(nodeTrue, nodeFalse) { }
+
+        public override void Action()
+        {
+            if (GameManager.Instance.enemyTroops.Count > GameManager.Instance.playerTroops.Count &&
+                GameManager.Instance.board.GetColorCellAmount(Team.Red) < GameManager.Instance.board.GetColorCellAmount(Team.Blue))
+            {
+                n_true.Action();
+            }
+            else
+            {
+                n_false.Action();
+            }
+
+            
         }
     }
 
@@ -855,7 +876,7 @@ public class IAEnemy : MonoBehaviour
         public override void Action()
         {
             Debug.Log("Pasar turno");
-            //GameManager.Instance.UseAction();
+            GameManager.Instance.UseAction();
         }
     }
 
