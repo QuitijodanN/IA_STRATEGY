@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEngine.Rendering.DebugUI.Table;
@@ -65,7 +66,7 @@ public class IAEnemy : MonoBehaviour
         // atamos nodos a los padres (sequence nodes)
         IACanAttack     canAttack   = new IACanAttack(attack,move);
         IAHaveTroops    haveTroops  = new IAHaveTroops(canAttack,skip);
-        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, attack);
+        IAEnoughGold    enoughGold  = new IAEnoughGold(deploy, move);
 
         n_root = enoughGold;
     }
@@ -660,23 +661,27 @@ public class IAEnemy : MonoBehaviour
 
     class IAMove : IANode
     {
+        List<Troop> playerTroops;
+        List<Troop> enemyTroops;
 
         Node[] path;
         int steps;
+
         Troop actualTroop;
-        bool change;
+
+        int index;
 
         public override void Action()
         {
             Debug.Log("Mover");
-            List<Troop> playerTroops = GameManager.Instance.playerTroops;
-            List<Troop> enemyTroops = GameManager.Instance.enemyTroops;
+            playerTroops = GameManager.Instance.playerTroops;
+            enemyTroops = GameManager.Instance.enemyTroops;
 
             path = null;
             steps = 1000;
+            index = 0;
 
             actualTroop = null;
-            change = false;
             
             if (path == null && playerTroops.Count > 0 && enemyTroops.Count > 0)
             {
@@ -690,38 +695,57 @@ public class IAEnemy : MonoBehaviour
                         (int, int) EPos = ECell.GetGridPosition();
                         (int, int) PPos = PCell.GetGridPosition();
 
-                        if (ETroop.moveRange > 1)
-                            PathRequestManager.RequestPath(EPos, PPos, OnPathFound, true);
-                        else
-                            PathRequestManager.RequestPath(EPos, PPos, OnPathFound, false);
+                        // Calcula el vector de dirección desde PPos hacia EPos
+                        int dirX = EPos.Item1 - PPos.Item1;
+                        int dirY = EPos.Item2 - PPos.Item2;
 
-                        if (change)
-                            actualTroop = ETroop;
+                        // Normaliza el vector (reduce a una dirección de paso único)
+                        int stepX = dirX != 0 ? dirX / Math.Abs(dirX) : 0;
+                        int stepY = dirY != 0 ? dirY / Math.Abs(dirY) : 0;
+
+                        // Calcula la posición ajustada (por ejemplo, a 1 celda de distancia)
+                        int adjustedX = PPos.Item1 + stepX * ETroop.attackRange; // Máximo 1 paso
+                        int adjustedY = PPos.Item2 + stepY * ETroop.attackRange;
+
+                        (int, int) adjustedPos = (adjustedX, adjustedY);
+
+                        if (ETroop.moveRange > 1)
+                            PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, true);
+                        else
+                            PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, false);
                     }
                 }
-                Cell destination = GameManager.Instance.board.getCell(path[1].gridY, path[1].gridX);
-                actualTroop.MoveToCell(destination);
 
             }
-            //GameManager.Instance.UseAction();
 
         }
         public void OnPathFound(Node[] newPath, bool pathSuccessful)
         {
+            int actual = index;
+            index++;
             if (pathSuccessful)
             {
                 if (path == null)
                 {
                     path = newPath;
                     steps = path.Length;
+                    actualTroop = enemyTroops[actual / playerTroops.Count];
 
                 }
                 else if (steps > newPath.Length)
                 {
                     path = newPath;
                     steps = path.Length;
-                }   
+                    actualTroop = enemyTroops[actual / playerTroops.Count];
+                }
             }
+            if (path.Length > 0 && index >= playerTroops.Count * enemyTroops.Count)
+            {
+                Cell destination = GameManager.Instance.board.getCell(path[0].gridY, path[0].gridX);
+                actualTroop.MoveToCell(destination);
+            }
+            GameManager.Instance.UseAction();
+
         }
 
     }
