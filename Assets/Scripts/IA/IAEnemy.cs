@@ -471,7 +471,7 @@ public class IAEnemy : MonoBehaviour
                                 if (x == 0 && y == 0) continue;
 
                                 if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).transform.childCount > 0) 
-                                    influence += 1f;
+                                    influence += 2.5f;
                                 if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).GetColorTeam() == Team.Blue)
                                     influence += 1f;
                                 else if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).GetColorTeam() == Team.None)
@@ -570,6 +570,170 @@ public class IAEnemy : MonoBehaviour
         }
     }
 
+    //class IAMove : IANode
+    //{
+    //    List<Troop> playerTroops;
+    //    List<Troop> enemyTroops;
+
+    //    Node[] path;
+    //    int steps;
+
+    //    Troop actualTroop;
+
+    //    int index;
+
+    //    public override void Action()
+    //    {
+    //        Debug.Log("Mover");
+    //        playerTroops = GameManager.Instance.playerTroops;
+    //        enemyTroops = GameManager.Instance.enemyTroops;
+
+    //        path = null;
+    //        steps = 1000;
+    //        index = 0;
+
+    //        actualTroop = null;
+
+    //        if (path == null && playerTroops.Count > 0 && enemyTroops.Count > 0)
+    //        {
+    //            foreach (Troop ETroop in enemyTroops)
+    //            {
+    //                foreach (Troop PTroop in playerTroops)
+    //                {
+    //                    Cell ECell = ETroop.transform.parent.GetComponent<Cell>();
+    //                    Cell PCell = PTroop.transform.parent.GetComponent<Cell>();
+
+    //                    (int, int) EPos = ECell.GetGridPosition();
+    //                    (int, int) PPos = PCell.GetGridPosition();
+
+    //                    // Calcula el vector de dirección desde PPos hacia EPos
+    //                    int dirX = EPos.Item1 - PPos.Item1;
+    //                    int dirY = EPos.Item2 - PPos.Item2;
+
+    //                    // Normaliza el vector (reduce a una dirección de paso único)
+    //                    int stepX = dirX != 0 ? dirX / Math.Abs(dirX) : 0;
+    //                    int stepY = dirY != 0 ? dirY / Math.Abs(dirY) : 0;
+
+    //                    // Calcula la posición ajustada (por ejemplo, a 1 celda de distancia)
+    //                    int adjustedX = PPos.Item1 + stepX * ETroop.attackRange; // Máximo 1 paso
+    //                    int adjustedY = PPos.Item2 + stepY * ETroop.attackRange;
+
+    //                    (int, int) adjustedPos = (adjustedX, adjustedY);
+
+    //                    if (ETroop.moveRange > 1)
+    //                        PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, true);
+    //                    else if (ETroop.moveRange == 1)
+    //                        PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, false);
+    //                    else
+    //                        AllTowers(enemyTroops);
+    //                }
+    //            }
+
+    //        }
+    //        else if (path == null)
+    //        {
+    //            int index = 0;
+    //            actualTroop = enemyTroops[index];
+    //            while (index < enemyTroops.Count && actualTroop.moveRange < 1)
+    //            {
+    //                index ++;
+    //                actualTroop = enemyTroops[index];
+    //            }
+    //            if (index <= enemyTroops.Count && actualTroop == null)
+    //                AllTowers(enemyTroops);
+    //            else
+    //            {
+    //                Cell ECell = actualTroop.transform.parent.GetComponent<Cell>();
+    //                (int, int) EPos = ECell.GetGridPosition();
+
+    //                float maxInfluence = 0;
+    //                (int, int) actualPos = (0, 0);
+
+    //                for (int i = 0; i < GameManager.Instance.board.rows; i++)
+    //                {
+    //                    for (int j = 0; j < GameManager.Instance.board.columns; j++)
+    //                    {
+    //                        if (GameManager.Instance.board.GetCellInfluence(i, j) >= maxInfluence)
+    //                            if (IsCloser(EPos, actualPos, (i, j)))
+    //                            {
+    //                                actualPos = (i, j);
+    //                                maxInfluence = GameManager.Instance.board.GetCellInfluence(i, j);
+    //                            }
+    //                    }
+    //                }
+
+    //                if (actualTroop.moveRange > 1)
+    //                    PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, true);
+    //                else
+    //                    PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, false);
+    //            }               
+
+    //        }
+
+    //    }
+
+    //    public static bool IsCloser((int x, int y) point1, (int x, int y) point2, (int x, int y) point3)
+    //    {
+    //        // Calcular la distancia al cuadrado (más eficiente que usar raíz cuadrada)
+    //        float distance1 = MathF.Pow(point3.x - point1.x, 2) + MathF.Pow(point3.y - point1.y, 2);
+    //        float distance2 = MathF.Pow(point3.x - point2.x, 2) + MathF.Pow(point3.y - point2.y, 2);
+
+    //        // Comparar distancias
+    //        return distance1 < distance2;
+    //    }
+
+    //    public void AllTowers(List<Troop> enemyTroops)
+    //    {
+    //        bool towers = true;
+    //        foreach (Troop ETroop in enemyTroops)
+    //            if (ETroop.moveRange != 0)
+    //                towers = false;
+
+    //        if (towers)
+    //            GameManager.Instance.UseAction();
+    //    }
+
+    //    public void OnPathFound(Node[] newPath, bool pathSuccessful)
+    //    {
+    //        int actual = index;
+    //        index++;
+    //        if (pathSuccessful)
+    //        {
+    //            if (path == null)
+    //            {
+    //                path = newPath;
+    //                steps = path.Length;
+    //                actualTroop = enemyTroops[actual / playerTroops.Count];
+
+    //            }
+    //            else if (steps > newPath.Length)
+    //            {
+    //                path = newPath;
+    //                steps = path.Length;
+    //                actualTroop = enemyTroops[actual / playerTroops.Count];
+    //            }
+    //        }
+    //        if (path.Length > 0 && index >= playerTroops.Count * enemyTroops.Count)
+    //        {
+    //            Cell destination = GameManager.Instance.board.GetCell(path[0].gridY, path[0].gridX);
+
+    //            GameManager.Instance.board.MoveTroop(actualTroop, destination);
+    //        }
+
+    //    }
+
+    //    public void OnDiferentPath(Node[] newPath, bool pathSuccessful)
+    //    {
+    //        if (newPath.Length > 0)
+    //        {
+    //            Cell destination = GameManager.Instance.board.GetCell(newPath[0].gridY, newPath[0].gridX);
+
+    //            GameManager.Instance.board.MoveTroop(actualTroop, destination);
+    //        }
+    //    }
+
+    //}
+
     class IAMove : IANode
     {
         List<Troop> playerTroops;
@@ -593,15 +757,16 @@ public class IAEnemy : MonoBehaviour
             index = 0;
 
             actualTroop = null;
-            
-            if (path == null && playerTroops.Count > 0 && enemyTroops.Count > 0)
-            {
-                foreach (Troop ETroop in enemyTroops)
-                {
-                    foreach (Troop PTroop in playerTroops)
-                    {
+
+            if (path == null && playerTroops.Count > 0 && enemyTroops.Count > 0) {
+                foreach (Troop ETroop in enemyTroops) {
+                    foreach (Troop PTroop in playerTroops) {
+                        if (ETroop == null || PTroop == null) continue;
+
                         Cell ECell = ETroop.transform.parent.GetComponent<Cell>();
                         Cell PCell = PTroop.transform.parent.GetComponent<Cell>();
+
+                        if (ECell == null || PCell == null) continue;
 
                         (int, int) EPos = ECell.GetGridPosition();
                         (int, int) PPos = PCell.GetGridPosition();
@@ -628,34 +793,41 @@ public class IAEnemy : MonoBehaviour
                             AllTowers(enemyTroops);
                     }
                 }
-
             }
-            else if (path == null)
-            {
-                int index = 0;
-                actualTroop = enemyTroops[index];
-                while (index < enemyTroops.Count && actualTroop.moveRange < 1)
-                {
-                    index ++;
-                    actualTroop = enemyTroops[index];
+            else if (path == null) {
+                if (enemyTroops.Count == 0) {
+                    Debug.LogError("No hay tropas enemigas disponibles.");
+                    return;
                 }
-                if (index <= enemyTroops.Count && actualTroop == null)
+
+                index = 0;
+                actualTroop = enemyTroops[index];
+                while (index < enemyTroops.Count && actualTroop != null && actualTroop.moveRange < 1) {
+                    index++;
+                    if (index < enemyTroops.Count) {
+                        actualTroop = enemyTroops[index];
+                    }
+                }
+
+                if (index >= enemyTroops.Count || actualTroop == null) {
                     AllTowers(enemyTroops);
-                else
-                {
+                }
+                else {
                     Cell ECell = actualTroop.transform.parent.GetComponent<Cell>();
+                    if (ECell == null) {
+                        Debug.LogError("La celda de la tropa actual es nula.");
+                        return;
+                    }
+
                     (int, int) EPos = ECell.GetGridPosition();
 
                     float maxInfluence = 0;
                     (int, int) actualPos = (0, 0);
 
-                    for (int i = 0; i < GameManager.Instance.board.rows; i++)
-                    {
-                        for (int j = 0; j < GameManager.Instance.board.columns; j++)
-                        {
+                    for (int i = 0; i < GameManager.Instance.board.rows; i++) {
+                        for (int j = 0; j < GameManager.Instance.board.columns; j++) {
                             if (GameManager.Instance.board.GetCellInfluence(i, j) >= maxInfluence)
-                                if (IsCloser(EPos, actualPos, (i, j)))
-                                {
+                                if (IsCloser(EPos, actualPos, (i, j))) {
                                     actualPos = (i, j);
                                     maxInfluence = GameManager.Instance.board.GetCellInfluence(i, j);
                                 }
@@ -666,19 +838,15 @@ public class IAEnemy : MonoBehaviour
                         PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, true);
                     else
                         PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, false);
-                }               
-
+                }
             }
-
         }
 
         public static bool IsCloser((int x, int y) point1, (int x, int y) point2, (int x, int y) point3)
         {
-            // Calcular la distancia al cuadrado (más eficiente que usar raíz cuadrada)
             float distance1 = MathF.Pow(point3.x - point1.x, 2) + MathF.Pow(point3.y - point1.y, 2);
             float distance2 = MathF.Pow(point3.x - point2.x, 2) + MathF.Pow(point3.y - point2.y, 2);
 
-            // Comparar distancias
             return distance1 < distance2;
         }
 
@@ -686,7 +854,7 @@ public class IAEnemy : MonoBehaviour
         {
             bool towers = true;
             foreach (Troop ETroop in enemyTroops)
-                if (ETroop.moveRange != 0)
+                if (ETroop != null && ETroop.moveRange != 0)
                     towers = false;
 
             if (towers)
@@ -695,43 +863,38 @@ public class IAEnemy : MonoBehaviour
 
         public void OnPathFound(Node[] newPath, bool pathSuccessful)
         {
+            if (newPath == null) {
+                Debug.LogError("El camino encontrado es nulo.");
+                return;
+            }
+
             int actual = index;
             index++;
-            if (pathSuccessful)
-            {
-                if (path == null)
-                {
+            if (pathSuccessful) {
+                if (path == null || steps > newPath.Length) {
                     path = newPath;
                     steps = path.Length;
-                    actualTroop = enemyTroops[actual / playerTroops.Count];
-
-                }
-                else if (steps > newPath.Length)
-                {
-                    path = newPath;
-                    steps = path.Length;
-                    actualTroop = enemyTroops[actual / playerTroops.Count];
+                    actualTroop = enemyTroops[Math.Min(actual / playerTroops.Count, enemyTroops.Count - 1)];
                 }
             }
-            if (path.Length > 0 && index >= playerTroops.Count * enemyTroops.Count)
-            {
+            if (path != null && path.Length > 0 && index >= playerTroops.Count * enemyTroops.Count) {
                 Cell destination = GameManager.Instance.board.GetCell(path[0].gridY, path[0].gridX);
 
                 GameManager.Instance.board.MoveTroop(actualTroop, destination);
             }
-
         }
 
         public void OnDiferentPath(Node[] newPath, bool pathSuccessful)
         {
-            if (newPath.Length > 0)
-            {
-                Cell destination = GameManager.Instance.board.GetCell(newPath[0].gridY, newPath[0].gridX);
-
-                GameManager.Instance.board.MoveTroop(actualTroop, destination);
+            if (newPath == null || newPath.Length == 0) {
+                Debug.LogError("El camino diferente es inválido.");
+                return;
             }
-        }
 
+            Cell destination = GameManager.Instance.board.GetCell(newPath[0].gridY, newPath[0].gridX);
+
+            GameManager.Instance.board.MoveTroop(actualTroop, destination);
+        }
     }
 
 

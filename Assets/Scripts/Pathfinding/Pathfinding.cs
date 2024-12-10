@@ -12,14 +12,29 @@ public class Pathfinding : MonoBehaviour {
 		requestManager = GetComponent<PathRequestManager>();
 		grid = GetComponent<Grid>();
 	}
-	
-	
-	public void StartFindPath((int, int) startPos, (int, int) targetPos, bool longDistance) {
-		Node nodeStartPos = grid.grid[startPos.Item1, startPos.Item2];
-        Node nodeTargetPos = grid.grid[targetPos.Item1, targetPos.Item2];
 
-        StartCoroutine(FindPath(nodeStartPos, nodeTargetPos, longDistance));
-	}
+
+    public bool StartFindPath((int, int) startPos, (int, int) targetPos, bool longDistance)
+    {
+        // Validar que las posiciones inicial y objetivo están dentro de los límites de la cuadrícula
+        if (IsPositionValid(startPos) && IsPositionValid(targetPos)) {
+            Node nodeStartPos = grid.grid[startPos.Item1, startPos.Item2];
+            Node nodeTargetPos = grid.grid[targetPos.Item1, targetPos.Item2];
+
+            StartCoroutine(FindPath(nodeStartPos, nodeTargetPos, longDistance));
+			return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    // Método auxiliar para validar si una posición está dentro de los límites
+    private bool IsPositionValid((int, int) position)
+    {
+        return position.Item1 >= 0 && position.Item1 < grid.grid.GetLength(0) &&
+               position.Item2 >= 0 && position.Item2 < grid.grid.GetLength(1);
+    }
 
     IEnumerator FindPath(Node startNode, Node targetNode, bool longDistance) {
 
