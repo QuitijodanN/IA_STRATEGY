@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEngine.Rendering.DebugUI.Table;
@@ -56,18 +57,21 @@ public class IAEnemy : MonoBehaviour
 
     private void InitializeIA()
     {
+        
         // iniciamos nodos hoja (acciones)
         IADeploy    deploy  = new IADeploy();
-        IAAttack    attack  = new IAAttack();
-        IASkipTurn  skip    = new IASkipTurn();
-        IAMove      move    = new IAMove();
+        IAAttack attack = new IAAttack();
+        IASkipTurn skip = new IASkipTurn();
+        IAMove move = new IAMove();
+        IAPaint paint = new IAPaint();
 
 
         // atamos nodos a los padres (sequence nodes)
-        IACanAttack     canAttack   = new IACanAttack  (attack,move);
-        IAHaveTroops    haveTroops  = new IAHaveTroops (canAttack, skip);
-        IASaveMoney     saveMoney   = new IASaveMoney  (haveTroops,deploy);
-        IAEnoughGold    enoughGold  = new IAEnoughGold (saveMoney, haveTroops);
+        IAMoveBehavior moveBehavior = new IAMoveBehavior(paint, move);
+        IACanAttack canAttack = new IACanAttack(attack, moveBehavior);
+        IAUseTroops useTroops = new IAUseTroops(canAttack, skip);
+        IASaveMoney saveMoney = new IASaveMoney(deploy, useTroops);
+        IAEnoughGold enoughGold = new IAEnoughGold(saveMoney, useTroops);
 
         n_root = enoughGold;
     }
@@ -81,6 +85,7 @@ public class IAEnemy : MonoBehaviour
 
         public override void Action()
         {
+            // Si tenemos oro para desplegar tropas
             if (GameManager.Instance.GetCoins(Team.Red) > 2) {
                 n_true.Action();
             }
@@ -96,31 +101,32 @@ public class IAEnemy : MonoBehaviour
 
         public override void Action()
         {
-            if (GameManager.Instance.enemyTroops.Count > GameManager.Instance.playerTroops.Count &&
-                GameManager.Instance.board.GetColorCellAmount(Team.Red) < GameManager.Instance.board.GetColorCellAmount(Team.Blue))
-            {
-                n_true.Action();
+            // Si tenemos mas tropas pero menos casillas pintadas, priorizamos movernos para pintar
+
+            if (GameManager.Instance.GetTurn() > 18 ||
+                GameManager.Instance.GetCoins(Team.Red) + 3 + GameManager.Instance.enemyTroops.Count > 20 ||
+                GameManager.Instance.enemyTroops.Count <= 1) {
+
+                if (GameManager.Instance.enemyTroops.Count > GameManager.Instance.playerTroops.Count &&
+                GameManager.Instance.board.GetColorCellAmount(Team.Red) < GameManager.Instance.board.GetColorCellAmount(Team.Blue)) {
+                    n_false.Action();
+                } else {
+                    n_true.Action();
+                }
             }
             else
             {
                 n_false.Action();
             }
-
-            
         }
     }
 
-    class IAHaveTroops : IASequenceNode
+    class IAUseTroops : IASequenceNode
     {
-        public IAHaveTroops(IANode nodeTrue, IANode nodeFalse) : base(nodeTrue, nodeFalse) { }
+        public IAUseTroops(IANode nodeTrue, IANode nodeFalse) : base(nodeTrue, nodeFalse) { }
 
         public override void Action()
         {
-            /*
-             Si tenemos tropas pregumntar si podemos atacar
-             else SKIP
-             */
-
             if(GameManager.Instance.enemyTroops.Count > 0)
                 n_true.Action();
             else 
@@ -143,44 +149,30 @@ public class IAEnemy : MonoBehaviour
              */
             foreach (Troop t in GameManager.Instance.enemyTroops)
             {
-                int multiplier = t.attackRange;
 
                 Cell currentCell = t.GetComponentInParent<Cell>();
                 (int, int) pos = currentCell.GetGridPosition(); // Usamos GetGridPosition del Cell
 
-                Debug.Log(multiplier);
-                for (int x = -1 * multiplier; x < 2 * multiplier; x++)
+                for (int x = -t.attackRange; x <= t.attackRange; x++)
                 {
-                    for (int y = -1 * multiplier; y < 2 * multiplier; y++)
+                    for (int y = -t.attackRange; y <= t.attackRange; y++)
                     {
                         if (x == 0 && y == 0) continue; // Ignoramos la celda de origen
 
                         int targetX = pos.Item1 + x;
                         int targetY = pos.Item2 + y;
-                        Debug.Log($"Target: {targetX}, {targetY}");
 
                         if (IsValidPosition(targetX, targetY, grid)) // Validamos coordenadas con la matriz
                         {
-                            Debug.Log("Esta la celda dentro del tablero");
                             Cell targetCell = grid[targetX, targetY];
                             if (targetCell.transform.childCount != 0)
                             {
-                                Debug.Log("Hay un hijo");
                                 Troop target = targetCell.transform.GetChild(0).GetComponent<Troop>();
                                 if (target.team == Team.Blue) // Encontramos una tropa enemiga
                                 {
-                                    Debug.Log("Target encontrado");
                                     attackPairs.Add((t, target));
                                 }
-                                else
-                                {
-                                    Debug.Log("No hay tropa enemiga");
-                                }
                             }
-                        }
-                        else
-                        {
-                            Debug.Log("No es una posición válida");
                         }
                     }
                 }
@@ -202,8 +194,23 @@ public class IAEnemy : MonoBehaviour
         }
     }
 
+    class IAMoveBehavior : IASequenceNode
+    {
+        public IAMoveBehavior(IANode nodeTrue, IANode nodeFalse) : base(nodeTrue, nodeFalse) { }
 
-
+        public override void Action()
+        {
+            if (GameManager.Instance.playerTroops.Count == 0 || GameManager.Instance.enemyTroops.Count > GameManager.Instance.playerTroops.Count) {
+                Debug.Log("Paint");
+                n_true.Action();
+            }
+            else {
+                Debug.Log("Move Path");
+                n_false.Action();
+            }
+                
+        }
+    }
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
     // -- NODOS HOJA
@@ -241,31 +248,35 @@ public class IAEnemy : MonoBehaviour
             Debug.Log("Ataque realizado");
         }
 
-        /*private (int range, int multiplier) GetAttackPattern(Troop t)
+        public (Troop attacker, Troop target) SelectBestAttack(List<(Troop attacker, Troop target)> attackPairs)
         {
-            // Define los patrones de ataque para cada tropa
-            if (t.cost == GameManager.Instance.enemyTroopPrefabs[0].cost) return (1, 1); // Caballero
-            if (t.cost == GameManager.Instance.enemyTroopPrefabs[1].cost) return (1, 2); // Arquero
-            if (t.cost == GameManager.Instance.enemyTroopPrefabs[2].cost) return (2, 1); // Torre
-            if (t.cost == GameManager.Instance.enemyTroopPrefabs[3].cost) return (3, 1); // Peón
-            if (t.cost == GameManager.Instance.enemyTroopPrefabs[4].cost) return (1, 1); // Barril
+            (Troop bestAttacker, Troop bestTarget) bestAttack = (null, null);
+            float bestDamage = float.MinValue;
 
-            return (0, 0); // Sin rango
-        }*/        
+            foreach (var attackPair in attackPairs) {
+                Troop attacker = attackPair.attacker;
+                Troop target = attackPair.target;
 
-        private (Troop attacker, Troop target) SelectBestAttack(List<(Troop attacker, Troop target)> attackPairs)
-        {
-            // Selecciona el primer ataque como ejemplo
-            // Puedes implementar una lógica más avanzada aquí
-            return attackPairs[0];
+                // Check if the attack will kill the target
+                if (target.health - target.damage <= 0) {
+                    // If this attack kills the target, choose it
+                    return attackPair;
+                }
+
+                // Otherwise, check if this attack deals more damage than the previous best
+                if (target.damage > bestDamage) {
+                    bestDamage = target.damage;
+                    bestAttack.bestAttacker = attacker;
+                    bestAttack.bestTarget = target;
+                }
+            }
+
+            return bestAttack;
         }
     }
 
     class IADeploy : IANode
     {
-        float valorInfluencia;
-        float previuosInfluence;
-        (int, int) posicionDeploy;
         private List<(int, int)> ObtenerPosicionesValidas(Troop tropa, BoardGrid tablero)
         {
             List<(int, int)> posibleDeploypos = new List<(int, int)>();
@@ -277,9 +288,9 @@ public class IAEnemy : MonoBehaviour
                 {
                     for(int j = 0; j < tablero.columns; j++)
                     {
-                        if (tablero.getCell(i, j).GetColorTeam() == Team.Red || tablero.getCell(i, j).GetColorTeam() == Team.None)
+                        if (tablero.GetCell(i, j).GetColorTeam() == Team.Red || tablero.GetCell(i, j).GetColorTeam() == Team.None)
                         {
-                            if(tablero.getCell(i, j).transform.childCount == 0)
+                            if(tablero.GetCell(i, j).transform.childCount == 0)
                             {
                                 posibleDeploypos.Add((i, j));
                             }
@@ -295,117 +306,23 @@ public class IAEnemy : MonoBehaviour
                 {
                     for (int j = 0; j < tablero.columns; j++)
                     {
-                        if (tablero.getCell(i, j).GetColorTeam() == Team.Red && tablero.getCell(i, j).transform.childCount == 0)
+                        if (tablero.GetCell(i, j).GetColorTeam() == Team.Red && tablero.GetCell(i, j).transform.childCount == 0)
                             posibleDeploypos.Add((i, j));
                     }
                 }
             }
             return posibleDeploypos;
         }
-        
-        private float[,] DeepCopyMapaInf(float[,] mapaOr)
-        {
-            int rows = mapaOr.GetLength(0);
-            int cols = mapaOr.GetLength(1);
-            float[,] copy = new float[rows, cols];
 
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    copy[i, j] = mapaOr[i, j];
-                }
-            }
-
-            return copy;
-        }
-
-        private Cell[,] DeepCopyBoard(Cell[,] ogBoard)
-        {
-            int rows = ogBoard.GetLength(0);
-            int cols = ogBoard.GetLength(1);
-            Cell[,] copy = new Cell[rows, cols];
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    copy[i, j] = ogBoard[i, j];
-                }
-            }
-
-            return copy;
-        }
-       
-
-        public void ActualizeInfluence(float[,] influenceMap, float sumaMapaInfluencia, Cell[,] cells)
-        {
-            int rows = cells.GetLength(0);
-            int columns = cells.GetLength(1);
-
-
-            for (int row = 0; row < rows; row++)
-            {
-                for (int col = 0; col < columns; col++)
-                {
-                    Team thisCellTeam = cells[row, col].GetColorTeam();
-                    int value = 0;
-                    if (thisCellTeam != Team.None)
-                    {
-                        if (thisCellTeam == Team.Blue)
-                            value = 1;
-                        else
-                            value = -1;
-
-                        if (cells[row, col].transform.childCount > 0)
-                            TroopInfluence(row, col, value,influenceMap);
-                    }
-                    influenceMap[row, col] += value;
-                    sumaMapaInfluencia += value;
-                }
-            }
-        }
-        void TroopInfluence(int row, int col, int value, float[,] influenceMap)
-        {
-            int rows = influenceMap.GetLength(0);
-            int columns = influenceMap.GetLength(1);
-
-            for (int nRow = row - 2; nRow <= row + 2; nRow++)
-                for (int nCol = col - 2; nCol <= col + 2; nCol++)
-                {
-                    if (nRow >= 0 && nCol >= 0 && nRow < rows && nCol < columns)
-                    {
-                        float distance = Mathf.Sqrt(Mathf.Pow(nCol - col, 2) + Mathf.Pow(nRow - row, 2));
-                        float nValue = value * 100;
-                        if (distance > 0)
-                            nValue = value / (distance * 2);
-                        influenceMap[nRow, nCol] += nValue;
-                    }
-                }
-        }
         private ((float,Troop),(int,int)) ObtenerPosicionPorInfluencia(Troop tropa, List<(int,int)> posicionesParaComp, BoardGrid tablero)
         {
-
-            valorInfluencia = tablero.sumaMapaInfluencia;
-            float copySumaInfluencia = valorInfluencia;
-            previuosInfluence = copySumaInfluencia;
-
+            float influence = 0f;
+            float bestInfluence = -1f;
+            (int, int) bestPos = (-1, -1);
 
             //Caballero
-            /*
-             Ataque Mele(1 pos)
-             Se mueve dos pos
-             
-             */
             if (tropa == GameManager.Instance.enemyTroopPrefabs[0])
             {
-                //Creamos un tablero de pruebas
-                //Y un mapa de pruebas
-                float[,] mapaCopy = DeepCopyMapaInf(tablero.influenceMap);
-                Cell[,] tableroCopy = DeepCopyBoard(tablero.GetBoard());
-               
-
-
                 //Recorremos todas las pos validas
                 foreach ((int,int) pos in posicionesParaComp)
                 {
@@ -414,228 +331,127 @@ public class IAEnemy : MonoBehaviour
                     {
                         for(int y = -1;y < 2; y++)
                         {
-                            if (x ==  0 && y == 0 ) continue;
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.rows && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.columns) {
+                                if (x == 0 && y == 0) continue;
 
-                            if(pos.Item1 + x >= 0 && pos.Item1 + x < tableroCopy.GetLength(0) && pos.Item2 + y >= 0 && pos.Item2 + y < tableroCopy.GetLength(1))
-                                if (tableroCopy[pos.Item1+x,pos.Item2+y].transform.childCount != 0)
-                                {
-                                    if (tableroCopy[pos.Item1 + x, pos.Item2 + y].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
-                                    {
-                                       
-                                        copySumaInfluencia -= 10f;
-                                    }
-                                       
-                                }
-                                else
-                                {
-                                    
-                                    copySumaInfluencia -= 3f;
-                                }
-                                  
-                                
+                                float t = tablero.GetCellInfluence(pos.Item1 + x, pos.Item2 + y);
+                                if (t >= 0) influence += t;
+                            }
                         }
                     }
 
-                    if(copySumaInfluencia < previuosInfluence)
+                    influence /= 8f;
+
+                    if(influence > bestInfluence)
                     {
-                        previuosInfluence = copySumaInfluencia;
-                        posicionDeploy = pos;
+                        bestInfluence = influence;
+                        bestPos = pos;
                     }
-
-                    copySumaInfluencia = valorInfluencia;
-
-
                 }
-              
+
+                Debug.Log("Caballero: " + bestInfluence);
+
             }
 
             //Arquero
             if (tropa == GameManager.Instance.enemyTroopPrefabs[1])
             {
-                //Creamos un tablero de pruebas
-                //BoardGrid copiaTablero = tablero.CopiaProfunda();
-                // Crear una nueva instancia del prefab o del objeto original
-                float[,] mapaCopy = DeepCopyMapaInf(tablero.influenceMap);
-                Cell[,] tableroCopy = DeepCopyBoard(tablero.GetBoard());
-                
-
                 //Recorremos todas las pos validas
                 foreach ((int, int) pos in posicionesParaComp)
                 {
-
-
+                    int closeEnemies = 0;
                     //Comprobar si puede atacar enemigos
-                    for (int x = -1; x < 2; x++)
+                    for (int x = -2; x < 3; x++)
                     {
-                        for (int y = -1; y < 2; y++)
+                        for (int y = -2; y < 3; y++)
                         {
-                            if (x == 0 && y == 0) continue;
-
-
-
-                            if (pos.Item1 + x*2 >= 0 && pos.Item1 + x*2 < tableroCopy.GetLength(0) && pos.Item2 + y*2 >= 0 && pos.Item2 + y * 2 < tableroCopy.GetLength(1))
-                            {
-                               
-                                if (tableroCopy[pos.Item1 + x * 2, pos.Item2 + y * 2].transform.childCount != 0)
-                                {
-                                    if (tableroCopy[pos.Item1 + x * 2, pos.Item2 + y * 2].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
-                                    {
-
-                                       
-                                        copySumaInfluencia -= 10f;
-                                            
-                                        
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.rows && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.columns) {
+                                if (x <= 1 && x >= -1 && y <= 1 && y >= -1) {
+                                    if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).transform.childCount > 0) {
+                                        closeEnemies++;
                                     }
-
+                                    continue;
                                 }
-                               
-                                else
-                                {
-                                   
-                                    copySumaInfluencia -= 4f;
-                                }       
+
+                                float t = tablero.GetCellInfluence(pos.Item1 + x, pos.Item2 + y);
+                                if (t >= 0) influence += t;
                             }
                         }
+
+                        influence = (influence - closeEnemies) / 12f;
+
+                        if (influence > bestInfluence) {
+                            bestInfluence = influence;
+                            bestPos = pos;
+                        }
                     }
-
-                    if (copySumaInfluencia <= previuosInfluence)
-                    {
-                        previuosInfluence = copySumaInfluencia;
-                        posicionDeploy = pos;
-                    }
-
-                    copySumaInfluencia = valorInfluencia;
-
                 }
-
+                Debug.Log("Arquero: " + bestInfluence);
             }
             //Torre
             //Solo si tenemos 2 o mas tropas
             //Se tiene que colocar en zonas seguras
-            if (tropa is Tower && GameManager.Instance.enemyTroops.Count >= 3)
+            if (tropa is Tower && GameManager.Instance.enemyTroops.Count >= 2)
             {
-                float seguridad = 0;
-                //Creamos un tablero de pruebas
-                //BoardGrid copiaTablero = tablero.CopiaProfunda();
-                // Crear una nueva instancia del prefab o del objeto original
-                float[,] mapaCopy = DeepCopyMapaInf(tablero.influenceMap);
-                Cell[,] tableroCopy = DeepCopyBoard(tablero.GetBoard());
-
                 //Recorremos todas las pos validas
                 foreach ((int, int) pos in posicionesParaComp)
                 {
-                  
-
                     //Comprobar si puede pintar o si tiene enemigos cerca
                     for (int x = -2; x < 3; x++)
                     {
                         for (int y = -2; y < 3; y++)
                         {
-                            if (x == 0 && y == 0) continue;
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.rows && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.columns) {
+                                if (x == 0 && y == 0) continue;
 
-                            //Cuanto más negativo más seguro
-                            //Cuanto más cercano al cero más para pintar
-                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tableroCopy.GetLength(0) && pos.Item2 + y >= 0 && pos.Item2 + y < tableroCopy.GetLength(1))
-                            {
-                              
-                                seguridad += mapaCopy[pos.Item1 + x, pos.Item2 + y];
+                                float t = tablero.GetCellInfluence(pos.Item1 + x, pos.Item2 + y);
+                                influence += t;
                             }
-                              
-                            
-
-
                         }
                     }
-                    //Las torres son defensivas por lo que no las queremos muy alejadas de nuestra influencia
-                    //Posición ideal sitios para pintar y seguro
-                   if(-1 < seguridad && seguridad <= 0)
-                    {
-                        copySumaInfluencia -= 50 + seguridad*3;
+                    
+                    influence /= -16f;
+
+                    if (influence > bestInfluence) {
+                        bestInfluence = influence;
+                        bestPos = pos;
                     }
-                    //Segunda mejor pos no se puede pintar mucho o nada pero es seguro
-                    else if(seguridad < -1)
-                    {
-                       copySumaInfluencia -= 5;
-                    }
-                   //Peor posición mucha influencia enemiga
-                    else
-                    {
-                        copySumaInfluencia += 50;
-                    }
-
-
-                    if (copySumaInfluencia <= previuosInfluence)
-                    {
-                        previuosInfluence = copySumaInfluencia;
-                        posicionDeploy = pos;
-                    }
-
-                    copySumaInfluencia = valorInfluencia;
-                    seguridad = 0;
-
-
                 }
-
+                Debug.Log("Torre: " + bestInfluence);
             }
 
             //Pawn solo si vamos mejor en casillas
             if (tropa == GameManager.Instance.enemyTroopPrefabs[3] && GameManager.Instance.enemyTroops.Count >= 2)
             {
-                
-                //Creamos un tablero de pruebas
-                //BoardGrid copiaTablero = tablero.CopiaProfunda();
-                // Crear una nueva instancia del prefab o del objeto original
-                float[,] mapaCopy = DeepCopyMapaInf(tablero.influenceMap);
-                Cell[,] tableroCopy = DeepCopyBoard(tablero.GetBoard());
-
 
                 //Recorremos todas las pos validas
-                foreach ((int, int) pos in posicionesParaComp)
-                {
-
-
+                foreach ((int, int) pos in posicionesParaComp) {
+                    int closeEnemies = 0;
                     //Comprobar si puede atacar enemigos
-                    for (int x = -1; x < 2; x++)
-                    {
-                        for (int y = -1; y < 2; y++)
-                        {
-                            if (x == 0 && y == 0) continue;
-
-
-
-                            if (pos.Item1 + x * 3 >= 0 && pos.Item1 + x * 3 < tableroCopy.GetLength(0) && pos.Item2 + y * 3 >= 0 && pos.Item2 + y * 3 < tableroCopy.GetLength(1))
-                            {
-
-                                if (tableroCopy[pos.Item1 + x * 3, pos.Item2 + y * 3].transform.childCount != 0)
-                                {
-                                    if (tableroCopy[pos.Item1 + x * 3, pos.Item2 + y * 3].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
-                                    {
-
-                                       
-                                        copySumaInfluencia -= 200f;
-
-
+                    for (int x = -3; x < 4; x++) {
+                        for (int y = -3; y < 4; y++) {
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.rows && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.columns) {
+                                if (x <= 1 && x >= -1 && y <= 1 && y >= -1) {
+                                    if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).transform.childCount > 0) {
+                                        closeEnemies++;
                                     }
-
+                                    continue;
                                 }
 
-                                else
-                                {
-
-                                    copySumaInfluencia -= 1f;
-                                }
+                                float t = tablero.GetCellInfluence(pos.Item1 + x, pos.Item2 + y);
+                                if (t >= 0) influence += t;
                             }
                         }
-                    }
 
-                    if (copySumaInfluencia <= previuosInfluence)
-                    {
-                        previuosInfluence = copySumaInfluencia;
-                        posicionDeploy = pos;
-                    }
+                        influence = (influence - closeEnemies) / 16f;
 
-                    copySumaInfluencia = valorInfluencia;
+                        if (influence > bestInfluence) {
+                            bestInfluence = influence;
+                            bestPos = pos;
+                        }
+                    }
                 }
+                Debug.Log("Mago: " + bestInfluence);
             }
             
             //Barrel
@@ -644,93 +460,46 @@ public class IAEnemy : MonoBehaviour
             //Solo lo usaremos si tenemos alguna tropa
             if (tropa is Bomb && GameManager.Instance.enemyTroops.Count >= 1)
             {
-                Debug.Log("Comprobando Barril");
-                float efectividad = 0;
-                float preEfectividad = 0;
-                int kills = 0;
-                int preKills = 0;
-
-                //Creamos un tablero de pruebas
-                //BoardGrid copiaTablero = tablero.CopiaProfunda();
-                // Crear una nueva instancia del prefab o del objeto original
-                float[,] mapaCopy = DeepCopyMapaInf(tablero.influenceMap);
-                Cell[,] tableroCopy = DeepCopyBoard(tablero.GetBoard());
 
                 //Recorremos todas las pos validas
                 foreach ((int, int) pos in posicionesParaComp)
                 {
-                    Debug.Log("Mirando posiciones barril");
+                    //Comprobar si esta a mele
+                    for (int x = -1; x < 2; x++) {
+                        for (int y = -1; y < 2; y++) {
+                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tablero.rows && pos.Item2 + y >= 0 && pos.Item2 + y < tablero.columns) {
+                                if (x == 0 && y == 0) continue;
 
-                    //Comprobar si puede pintar o si tiene enemigos cerca
-                    for (int x = -1; x < 2; x++)
-                    {
-                        for (int y = -1; y < 2; y++)
-                        {
-                            if (x == 0 && y == 0) continue;
-
-                            //Vemos si matamos
-                            if (pos.Item1 + x >= 0 && pos.Item1 + x < tableroCopy.GetLength(0) && pos.Item2 + y >= 0 && pos.Item2 + y < tableroCopy.GetLength(1))
-                            {
-                                if (tableroCopy[pos.Item1 + x, pos.Item2 + y].transform.childCount != 0)
-                                {
-                                    if (tableroCopy[pos.Item1 + x, pos.Item2 + y].transform.GetChild(0).GetComponent<Troop>().team == Team.Blue)
-                                    {
-                                        Debug.Log("Una KILL");
-                                        preKills++;
-                                    }
-                                        
-
-                                    //Factor de desempate: vemos cuanto altera el mapa de influencia
-                                    preEfectividad += mapaCopy[pos.Item1 + x, pos.Item2 + y];
-                                }
-                                   
+                                if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).transform.childCount > 0) 
+                                    influence += 1f;
+                                if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).GetColorTeam() == Team.Blue)
+                                    influence += 1f;
+                                else if (tablero.GetCell(pos.Item1 + x, pos.Item2 + y).GetColorTeam() == Team.None)
+                                    influence += 0.5f;
                             }
-                               
-                        }
-                    }
-                 
-                    if(preKills > kills)
-                    {
-                        Debug.Log("Comprobando jugada con más kills");
-                        kills = preKills;
-                        copySumaInfluencia -= 30*kills + efectividad*2f;
-                        posicionDeploy = pos;
-                        previuosInfluence = copySumaInfluencia;
-                        posicionDeploy = pos;
-
-                    }
-                    else if(preKills == kills)
-                    {
-                        if(preEfectividad > efectividad)
-                        {
-                            Debug.Log("Comprobando jugada con más kills");
-                            efectividad = preEfectividad;
-                            copySumaInfluencia -= 30 * kills + efectividad * 2f;
-                            posicionDeploy = pos;
-                            previuosInfluence = copySumaInfluencia;
-                            posicionDeploy = pos;
                         }
                     }
 
-                    preKills = 0;
-                    copySumaInfluencia = valorInfluencia;
+                    influence /= 8f;
+
+                    if (influence > bestInfluence) {
+                        bestInfluence = influence;
+                        bestPos = pos;
+                    }
                 }
+                Debug.Log("Bomba: " + bestInfluence);
             }
-
-           
-
-            return ((previuosInfluence, tropa),posicionDeploy);
+            return ((bestInfluence, tropa), bestPos);
         }
+
         public (Troop,(int,int)) ObtenerMejorJugada()
         {
-           
-
             Troop tropaSeleccionada = null;
 
             List<(int, int)> posibleDeploypos = new List<(int, int)>();
             (int, int) deployPos = (0, 0);
             List<((float,Troop), (int, int))> List_score_pos = new List <((float, Troop), (int, int))>();
-            float previusBestPlay = 0;
+            float previousBestPlay = 0;
            
 
             for (int i = 0; i < GameManager.Instance.enemyTroopPrefabs.Count; i++)
@@ -738,29 +507,50 @@ public class IAEnemy : MonoBehaviour
                 //Si tenemos suficiente dinero para comprar la tropa simulamos la mejor jugada
                 if(GameManager.Instance.GetCoins(Team.Red) >= GameManager.Instance.enemyTroopPrefabs[i].cost)
                 {
-                
                     //Funciona
                     posibleDeploypos = ObtenerPosicionesValidas(GameManager.Instance.enemyTroopPrefabs[i],GameManager.Instance.board);
-                    
-                    //Guardamos la jugada
-                    List_score_pos.Add(ObtenerPosicionPorInfluencia(GameManager.Instance.enemyTroopPrefabs[i], posibleDeploypos, GameManager.Instance.board));
-                    
 
+                    ((float, Troop), (int, int)) bestDeploypos = ObtenerPosicionPorInfluencia(GameManager.Instance.enemyTroopPrefabs[i], posibleDeploypos, GameManager.Instance.board);
+
+                    //Guardamos la jugada
+                    List_score_pos.Add(bestDeploypos);
                 }
                 
             }
 
-            previusBestPlay = List_score_pos[0].Item1.Item1;
+            previousBestPlay = List_score_pos[0].Item1.Item1;
             tropaSeleccionada = List_score_pos[0].Item1.Item2;
             deployPos = List_score_pos[0].Item2;
             foreach (((float,Troop), (int, int)) jugada in List_score_pos)
             {
                 //Debug.Log("Tropa en el array "+jugada.Item1.Item2);
-                if(jugada.Item1.Item1 < previusBestPlay)
+                if(jugada.Item1.Item1 > previousBestPlay)
                 {
                     Debug.Log("Tropa seleccionada " + jugada.Item1.Item2);
+                    previousBestPlay = jugada.Item1.Item1;
                     tropaSeleccionada = jugada.Item1.Item2;
                     deployPos = jugada.Item2;
+                }
+            }
+
+            // Si previousBestPlay sigue siendo 0, selecciona una tropa y posición aleatorias
+            if (previousBestPlay == 0) {
+                // Filtrar tropas disponibles según el coste
+                List<Troop> tropasDisponibles = GameManager.Instance.enemyTroopPrefabs
+                    .Where(t => GameManager.Instance.GetCoins(Team.Red) >= t.cost)
+                    .ToList();
+
+                if (tropasDisponibles.Count > 0) {
+                    // Seleccionar tropa aleatoria
+                    tropaSeleccionada = tropasDisponibles[UnityEngine.Random.Range(0, tropasDisponibles.Count)];
+
+                    // Obtener posiciones válidas para esa tropa
+                    posibleDeploypos = ObtenerPosicionesValidas(tropaSeleccionada, GameManager.Instance.board);
+
+                    // Seleccionar posición aleatoria
+                    if (posibleDeploypos.Count > 0) {
+                        deployPos = posibleDeploypos[UnityEngine.Random.Range(0, posibleDeploypos.Count)];
+                    }
                 }
             }
 
@@ -773,10 +563,10 @@ public class IAEnemy : MonoBehaviour
 
             (Troop, (int, int)) jugada = ObtenerMejorJugada();
 
-            GameManager.Instance.board.SpawnTroop(jugada.Item1,GameManager.Instance.board.getCell(jugada.Item2.Item1,jugada.Item2.Item2));
-            GameManager.Instance.SpendCoins(jugada.Item1.cost, Team.Red);
-
-            //GameManager.Instance.UseAction();
+            if (jugada.Item2.Item1 > -1) {
+                GameManager.Instance.board.SpawnTroop(jugada.Item1, GameManager.Instance.board.GetCell(jugada.Item2.Item1, jugada.Item2.Item2));
+                GameManager.Instance.SpendCoins(jugada.Item1.cost, Team.Red);
+            }
         }
     }
 
@@ -859,15 +649,15 @@ public class IAEnemy : MonoBehaviour
                     float maxInfluence = 0;
                     (int, int) actualPos = (0, 0);
 
-                    for (int i = 0; i < GameManager.Instance.board.influenceMap.GetLength(0); i++)
+                    for (int i = 0; i < GameManager.Instance.board.rows; i++)
                     {
-                        for (int j = 0; j < GameManager.Instance.board.influenceMap.GetLength(1); j++)
+                        for (int j = 0; j < GameManager.Instance.board.columns; j++)
                         {
-                            if (GameManager.Instance.board.influenceMap[i, j] >= maxInfluence)
+                            if (GameManager.Instance.board.GetCellInfluence(i, j) >= maxInfluence)
                                 if (IsCloser(EPos, actualPos, (i, j)))
                                 {
                                     actualPos = (i, j);
-                                    maxInfluence = GameManager.Instance.board.influenceMap[i, j];
+                                    maxInfluence = GameManager.Instance.board.GetCellInfluence(i, j);
                                 }
                         }
                     }
@@ -925,7 +715,7 @@ public class IAEnemy : MonoBehaviour
             }
             if (path.Length > 0 && index >= playerTroops.Count * enemyTroops.Count)
             {
-                Cell destination = GameManager.Instance.board.getCell(path[0].gridY, path[0].gridX);
+                Cell destination = GameManager.Instance.board.GetCell(path[0].gridY, path[0].gridX);
 
                 GameManager.Instance.board.MoveTroop(actualTroop, destination);
             }
@@ -936,7 +726,7 @@ public class IAEnemy : MonoBehaviour
         {
             if (newPath.Length > 0)
             {
-                Cell destination = GameManager.Instance.board.getCell(newPath[0].gridY, newPath[0].gridX);
+                Cell destination = GameManager.Instance.board.GetCell(newPath[0].gridY, newPath[0].gridX);
 
                 GameManager.Instance.board.MoveTroop(actualTroop, destination);
             }
@@ -944,12 +734,136 @@ public class IAEnemy : MonoBehaviour
 
     }
 
+
+    class IAPaint : IANode
+    {
+
+        (Troop, Cell) GetBestMoveForAllTroops(List<Troop> enemyTroops)
+        {
+            BoardGrid board = GameManager.Instance.board;
+
+            // Direcciones: (dx, dy) = {Arriba, Abajo, Derecha, Izquierda}
+            int[,] directions = new int[,] { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
+
+            // Función local para comprobar si una posición está dentro de los límites
+            bool CheckMovementIfInBounds(int i, int j)
+            {
+                if (i >= 0 && i < board.rows && j >= 0 && j < board.columns) {
+                    if (board.GetCell(i, j).transform.childCount > 0) {
+                        return false; // La celda está ocupada
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            // Función auxiliar para calcular el puntaje de movimiento en una dirección y devolver la celda
+            (float, Cell) CalculateMoveScore(int startX, int startY, int deltaX, int deltaY, Troop troop)
+            {
+                float moveScore = 0;
+                Cell bestCell = null;
+
+                for (int j = 1; j <= troop.moveRange; j++) {
+                    int newX = startX + deltaX * j;
+                    int newY = startY + deltaY * j;
+
+                    if (!CheckMovementIfInBounds(newX, newY)) break;
+
+                    Cell currentCell = board.GetCell(newX, newY);
+                    Team color = currentCell.GetColorTeam();
+
+                    if (color == Team.Blue) {
+                        moveScore += 2;
+                    }
+                    else if (color == Team.None) {
+                        moveScore += 1;
+                    }
+
+                    bestCell = currentCell; // Actualiza la mejor celda válida
+                }
+
+                return (moveScore, bestCell);
+            }
+
+            // Variables para rastrear el mejor movimiento global
+            float bestGlobalScore = float.MinValue;
+            Cell bestGlobalCell = null;
+            Troop bestTroop = null;
+
+            // Iterar sobre todas las tropas enemigas
+            foreach (Troop troop in enemyTroops) {
+                Cell center = troop.transform.GetComponentInParent<Cell>();
+                (int x, int y) gridPosition = center.GetGridPosition();
+                int x = gridPosition.x;
+                int y = gridPosition.y;
+
+                if (troop is Tower) {
+                    float score = 0f;
+                    // Loop through rows and columns within the specified range
+                    for (int offsetX = -troop.attackRange; offsetX <= troop.attackRange; offsetX++) {
+                        for (int offsetY = -troop.attackRange; offsetY <= troop.attackRange; offsetY++) {
+                            int currentX = center.GetGridPosition().col + offsetX;
+                            int currentY = center.GetGridPosition().row + offsetY;
+
+                            if (currentY >= 0 && currentY < GameManager.Instance.board.rows && currentX >= 0 && currentX < GameManager.Instance.board.columns) {
+                                if (GameManager.Instance.board.GetCell(currentY, currentX).transform.childCount == 0 && GameManager.Instance.board.GetCell(currentY, currentX) != center) {
+                                    if (GameManager.Instance.board.GetCell(currentY, currentX).GetColorTeam() == Team.None) {
+                                        score += 1;
+                                    }
+                                    else if (GameManager.Instance.board.GetCell(currentY, currentX).GetColorTeam() == Team.Blue) {
+                                        score += 2;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (score > bestGlobalScore) {
+                        bestGlobalScore = score;
+                        bestGlobalCell = troop.transform.GetComponentInParent<Cell>();
+                        bestTroop = troop; // Actualiza la tropa que encontró el mejor movimiento
+                    }
+                } else {
+                    // Iterar sobre todas las direcciones y calcular el mejor puntaje
+                    for (int i = 0; i < directions.GetLength(0); i++) {
+                        int dx = directions[i, 0];
+                        int dy = directions[i, 1];
+
+                        var (score, cell) = CalculateMoveScore(x, y, dx, dy, troop);
+
+                        if (score > bestGlobalScore && cell != null) {
+                            bestGlobalScore = score;
+                            bestGlobalCell = cell;
+                            bestTroop = troop; // Actualiza la tropa que encontró el mejor movimiento
+                        }
+                    }
+                }
+                
+            }
+
+            // Retornar la tropa y la mejor celda global
+            return (bestTroop, bestGlobalCell);
+        }
+
+
+        public override void Action()
+        {
+            (Troop bestTroopForAll, Cell bestCellForAll) destination = GetBestMoveForAllTroops(GameManager.Instance.enemyTroops);
+
+            if (destination.bestTroopForAll is Tower) {
+                GameManager.Instance.board.AttackWithTroop(destination.bestTroopForAll, null);
+            }
+            GameManager.Instance.board.MoveTroop(destination.bestTroopForAll, destination.bestCellForAll);
+        }
+
+    }
+
+
     class IASkipTurn : IANode
     {
         public override void Action()
         {
             Debug.Log("Pasar turno");
-            GameManager.Instance.UseAction();
+            GameManager.Instance.SkipTurn();
         }
     }
 

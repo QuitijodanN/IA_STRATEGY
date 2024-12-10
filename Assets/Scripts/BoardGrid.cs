@@ -16,7 +16,7 @@ public class BoardGrid : MonoBehaviour
     public Troop selectedTroop = null;
 
     private Cell[,] cells;
-    public float[,] influenceMap;
+    private float[,] influenceMap;
     public float sumaMapaInfluencia;
 
     [SerializeField] private AudioClip selectClip;
@@ -61,7 +61,7 @@ public class BoardGrid : MonoBehaviour
             }
         }
     }
-    public Cell getCell(int row, int col) {
+    public Cell GetCell(int row, int col) {
         if (row < 0 || row >= rows || col < 0 || col >= columns)
         {
             return null;
@@ -107,13 +107,12 @@ public class BoardGrid : MonoBehaviour
                 int value = 0;
                 if (thisCellTeam != Team.None)
                 {
-                    if (thisCellTeam == Team.Blue)
-                        value = 1;
-                    else
-                        value = -1;
-
                     if (cells[row, col].transform.childCount > 0)
-                        TroopInfluence(row, col, value);
+                        if (thisCellTeam == Team.Blue)
+                            value = 1;
+                        else
+                            value = -1;
+                    TroopInfluence(row, col, value);
                 }
                 influenceMap[row, col] += value;
                 sumaMapaInfluencia += value;
@@ -138,12 +137,21 @@ public class BoardGrid : MonoBehaviour
                 if (nRow >= 0 && nCol >= 0 && nRow < rows && nCol < columns)
                 {
                     float distance = Mathf.Sqrt(Mathf.Pow(nCol - col, 2) + Mathf.Pow(nRow - row, 2));
-                    float nValue = value * 100;
+                    float nValue = value;
                     if (distance > 0)
                         nValue = value / (distance * 2);
                     influenceMap[nRow, nCol] += nValue;
                 }
             }
+    }
+
+    public float GetCellInfluence(int row, int col)
+    {
+        if (row < 0 || row >= rows || col < 0 || col >= columns) {
+            return 0;
+        }
+        //Debug.Log(cells[row, col]);
+        return influenceMap[row, col];
     }
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
@@ -233,7 +241,7 @@ public class BoardGrid : MonoBehaviour
 
                 ActivateAttackIfInBounds(currentY, currentX);
             }
-        }
+        }   
     }
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
@@ -244,7 +252,6 @@ public class BoardGrid : MonoBehaviour
         if (dropClip != null) {
             gm.audioSource.PlayOneShot(dropClip);
         }
-       
 
         Troop troop = Instantiate(troopPrefab, cell.transform.position, Quaternion.identity);
         if (troop is not Bomb) {
@@ -276,22 +283,21 @@ public class BoardGrid : MonoBehaviour
 
     public void AttackWithTroop(Troop troop, Troop target)
     {
-        if (troop != null) {
-            //Attack
-            if (troop is Tower) {
-                AttackWithArea(troop);
-                Tower tower = selectedTroop as Tower;
-                tower.PlayEffect();
+        //Attack
+        if (troop is Tower) {
+            AttackWithArea(troop);
+            Tower tower = selectedTroop as Tower;
+            tower.PlayEffect();
+            gm.UseAction();
+        }
+        else if (troop != null) {
+            if (troop.transform.GetComponentInParent<Cell>().GetGridPosition().col < target.transform.GetComponentInParent<Cell>().GetGridPosition().col) {
+                troop.transform.GetComponent<SpriteRenderer>().flipX = false;
             }
-            else {
-                if (troop.transform.GetComponentInParent<Cell>().GetGridPosition().col < target.transform.GetComponentInParent<Cell>().GetGridPosition().col) {
-                    troop.transform.GetComponent<SpriteRenderer>().flipX = false;
-                }
-                else if (troop.transform.GetComponentInParent<Cell>().GetGridPosition().col > target.transform.GetComponentInParent<Cell>().GetGridPosition().col) {
-                    troop.transform.GetComponent<SpriteRenderer>().flipX = true;
-                }
-                selectedTroop.Attack(target);
+            else if (troop.transform.GetComponentInParent<Cell>().GetGridPosition().col > target.transform.GetComponentInParent<Cell>().GetGridPosition().col) {
+                troop.transform.GetComponent<SpriteRenderer>().flipX = true;
             }
+            selectedTroop.Attack(target);
             gm.UseAction();
         }
         ResetGridActiveSelections();

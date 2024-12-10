@@ -131,7 +131,7 @@ public class Cell : MonoBehaviour
             // Cuando clicas sobre una tropa que quieres usar para mover o atacar
             else {
                 // Solo seleccionables las tropas del turno correspondiente
-                if (gm.yourTurn && clickedTroop.team == Team.Blue || !gm.yourTurn && clickedTroop.team == Team.Red) {
+                if (gm.yourTurn && clickedTroop.team == Team.Blue) {
                     boardGrid.ActivateMovementSelection(clickedTroop);
                     boardGrid.ActivateAttackSelection(clickedTroop);
                 }

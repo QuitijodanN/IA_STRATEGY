@@ -44,6 +44,7 @@ public class TroopDeployer : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        gm.board.ResetGridActiveSelections();
         gm.audioSource.PlayOneShot(grabClip);
         // Calculate offset from pointer position to the center of the card
         RectTransform rectTransform = troopImage.GetComponent<RectTransform>();
