@@ -785,12 +785,12 @@ public class IAEnemy : MonoBehaviour
 
                         (int, int) adjustedPos = (adjustedX, adjustedY);
 
-                        if (ETroop.moveRange > 1)
-                            PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, true);
-                        else if (ETroop.moveRange == 1)
-                            PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, false);
-                        else
+                        if (ETroop.moveRange < 1)
                             AllTowers(enemyTroops);
+
+                        else
+                            PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, ETroop.moveRange);
+
                     }
                 }
             }
@@ -834,10 +834,7 @@ public class IAEnemy : MonoBehaviour
                         }
                     }
 
-                    if (actualTroop.moveRange > 1)
-                        PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, true);
-                    else
-                        PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, false);
+                    PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, actualTroop.moveRange);
                 }
             }
         }

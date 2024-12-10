@@ -12,7 +12,7 @@ public class SeekPathTry : MonoBehaviour
 
     public void Try()
     {
-        PathRequestManager.RequestPath((1,2), (3, 7), OnPathFound, false);
+        PathRequestManager.RequestPath((1,2), (3, 7), OnPathFound, 1);
     }
 
     public void OnPathFound(Node[] newPath, bool pathSuccessful)

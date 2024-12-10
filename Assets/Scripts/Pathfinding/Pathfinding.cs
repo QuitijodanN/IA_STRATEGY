@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using Unity.VisualScripting;
 
 public class Pathfinding : MonoBehaviour {
 	
@@ -14,14 +15,14 @@ public class Pathfinding : MonoBehaviour {
 	}
 
 
-    public bool StartFindPath((int, int) startPos, (int, int) targetPos, bool longDistance)
+    public bool StartFindPath((int, int) startPos, (int, int) targetPos, int distance)
     {
         // Validar que las posiciones inicial y objetivo están dentro de los límites de la cuadrícula
         if (IsPositionValid(startPos) && IsPositionValid(targetPos)) {
             Node nodeStartPos = grid.grid[startPos.Item1, startPos.Item2];
             Node nodeTargetPos = grid.grid[targetPos.Item1, targetPos.Item2];
 
-            StartCoroutine(FindPath(nodeStartPos, nodeTargetPos, longDistance));
+            StartCoroutine(FindPath(nodeStartPos, nodeTargetPos, distance));
 			return true;
         }
         else {
@@ -36,7 +37,7 @@ public class Pathfinding : MonoBehaviour {
                position.Item2 >= 0 && position.Item2 < grid.grid.GetLength(1);
     }
 
-    IEnumerator FindPath(Node startNode, Node targetNode, bool longDistance) {
+    IEnumerator FindPath(Node startNode, Node targetNode, int distance) {
 
 		Node[] waypoints = new Node[0];
 		bool pathSuccess = false;		
@@ -59,9 +60,8 @@ public class Pathfinding : MonoBehaviour {
 					if (!neighbour.walkable || closedSet.Contains(neighbour)) {
 						continue;
 					}
-					
-					if (longDistance)
-					{
+                    if (Distance(currentNode, neighbour, distance))
+                    {
                         int newMovementCostToNeighbour = currentNode.gCost + GetDistance(currentNode, neighbour);
                         if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                         {
@@ -73,28 +73,14 @@ public class Pathfinding : MonoBehaviour {
                                 openSet.Add(neighbour);
                         }
                     }
-					else if (DistanceOne(currentNode, neighbour))
-					{
-                        int newMovementCostToNeighbour = currentNode.gCost + GetDistance(currentNode, neighbour);
-                        if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
-                        {
-                            neighbour.gCost = newMovementCostToNeighbour;
-                            neighbour.hCost = GetDistance(neighbour, targetNode);
-                            neighbour.parent = currentNode;
-
-                            if (!openSet.Contains(neighbour))
-                                openSet.Add(neighbour);
-                        }
-                    }
-					
-				}
+                }
 			}
 		}
 		yield return null;
 		if (pathSuccess) {
 			waypoints = RetracePath(startNode,targetNode);
 		}
-		requestManager.FinishedProcessingPath(waypoints,pathSuccess, longDistance);
+		requestManager.FinishedProcessingPath(waypoints,pathSuccess, distance);
 		
 	}
 	
@@ -114,12 +100,12 @@ public class Pathfinding : MonoBehaviour {
 		return reversedPath;
 		
 	}
-	bool DistanceOne(Node nodeA, Node nodeB)
+	bool Distance(Node nodeA, Node nodeB, int distance)
 	{
         int dstX = Mathf.Abs(nodeA.gridX - nodeB.gridX);
         int dstY = Mathf.Abs(nodeA.gridY - nodeB.gridY);
 
-		if (dstX > 1 || dstY > 1)
+		if (dstX > distance || dstY > distance)
 			return false;
 		return true;
     }

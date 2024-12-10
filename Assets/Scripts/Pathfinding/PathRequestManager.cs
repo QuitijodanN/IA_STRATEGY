@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using Unity.VisualScripting;
+using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
 
 public class PathRequestManager : MonoBehaviour {
 
@@ -18,38 +20,38 @@ public class PathRequestManager : MonoBehaviour {
 		pathfinding = GetComponent<Pathfinding>();
 	}
 
-    public static void RequestPath((int, int) pathStart, (int, int) pathEnd, Action<Node[], bool> callback, bool longDistance) {
-		PathRequest newRequest = new PathRequest(pathStart,pathEnd,callback,longDistance);
+    public static void RequestPath((int, int) pathStart, (int, int) pathEnd, Action<Node[], bool> callback, int distance) {
+		PathRequest newRequest = new PathRequest(pathStart,pathEnd,callback, distance);
 		instance.pathRequestQueue.Enqueue(newRequest);
-		instance.TryProcessNext(longDistance);
+		instance.TryProcessNext(distance);
 	}
 
-	void TryProcessNext(bool longDistance) {
+	void TryProcessNext(int distance) {
 		if (!isProcessingPath && pathRequestQueue.Count > 0) {
 			currentPathRequest = pathRequestQueue.Dequeue();
-			isProcessingPath = true;
-			pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, longDistance);
+            isProcessingPath = true;
+			pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, distance);
 		}
 	}
 
-	public void FinishedProcessingPath(Node[] path, bool success, bool longDistance) {
+	public void FinishedProcessingPath(Node[] path, bool success, int distance) {
 		currentPathRequest.callback(path,success);
 		isProcessingPath = false;
-		TryProcessNext(longDistance);
+		TryProcessNext(distance);
 	}
 
 	struct PathRequest {
 		public (int, int) pathStart;
 		public (int, int) pathEnd;
 		public Action<Node[], bool> callback;
-		public bool longDistance;
+		public int distance;
 
 
-        public PathRequest((int, int) _start, (int, int) _end, Action<Node[], bool> _callback, bool _longDistance) {
+        public PathRequest((int, int) _start, (int, int) _end, Action<Node[], bool> _callback, int _distance) {
 			pathStart = _start;
 			pathEnd = _end;
 			callback = _callback;
-			longDistance = _longDistance;
+            distance = _distance;
 
         }
 
