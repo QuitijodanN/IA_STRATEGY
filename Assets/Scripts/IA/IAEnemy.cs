@@ -37,7 +37,7 @@ public class IAEnemy : MonoBehaviour
         if (!gm.yourTurn) {
             thinkTimer += Time.deltaTime;
 
-            if (thinkTimer >= 0.5f) {
+            if (thinkTimer >= 1.5f) {
                 Think(); // Llamar a la función Think
                 thinkTimer = 0f; // Reiniciar el temporizador
             }
@@ -832,14 +832,77 @@ public class IAEnemy : MonoBehaviour
 
                         if (ETroop.moveRange > 1)
                             PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, true);
-                        else
+                        else if (ETroop.moveRange == 1)
                             PathRequestManager.RequestPath(EPos, adjustedPos, OnPathFound, false);
+                        else
+                            AllTowers(enemyTroops);
                     }
                 }
 
             }
+            else if (path == null)
+            {
+                int index = 0;
+                actualTroop = enemyTroops[index];
+                while (index < enemyTroops.Count && actualTroop.moveRange < 1)
+                {
+                    index ++;
+                    actualTroop = enemyTroops[index];
+                }
+                if (index <= enemyTroops.Count && actualTroop == null)
+                    AllTowers(enemyTroops);
+                else
+                {
+                    Cell ECell = actualTroop.transform.parent.GetComponent<Cell>();
+                    (int, int) EPos = ECell.GetGridPosition();
+
+                    float maxInfluence = 0;
+                    (int, int) actualPos = (0, 0);
+
+                    for (int i = 0; i < GameManager.Instance.board.influenceMap.GetLength(0); i++)
+                    {
+                        for (int j = 0; j < GameManager.Instance.board.influenceMap.GetLength(1); j++)
+                        {
+                            if (GameManager.Instance.board.influenceMap[i, j] >= maxInfluence)
+                                if (IsCloser(EPos, actualPos, (i, j)))
+                                {
+                                    actualPos = (i, j);
+                                    maxInfluence = GameManager.Instance.board.influenceMap[i, j];
+                                }
+                        }
+                    }
+
+                    if (actualTroop.moveRange > 1)
+                        PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, true);
+                    else
+                        PathRequestManager.RequestPath(EPos, actualPos, OnDiferentPath, false);
+                }               
+
+            }
 
         }
+
+        public static bool IsCloser((int x, int y) point1, (int x, int y) point2, (int x, int y) point3)
+        {
+            // Calcular la distancia al cuadrado (más eficiente que usar raíz cuadrada)
+            float distance1 = MathF.Pow(point3.x - point1.x, 2) + MathF.Pow(point3.y - point1.y, 2);
+            float distance2 = MathF.Pow(point3.x - point2.x, 2) + MathF.Pow(point3.y - point2.y, 2);
+
+            // Comparar distancias
+            return distance1 < distance2;
+        }
+
+        public void AllTowers(List<Troop> enemyTroops)
+        {
+            bool towers = true;
+            foreach (Troop ETroop in enemyTroops)
+                if (ETroop.moveRange != 0)
+                    towers = false;
+
+            if (towers)
+                GameManager.Instance.UseAction();
+        }
+
         public void OnPathFound(Node[] newPath, bool pathSuccessful)
         {
             int actual = index;
@@ -867,6 +930,16 @@ public class IAEnemy : MonoBehaviour
                 GameManager.Instance.board.MoveTroop(actualTroop, destination);
             }
 
+        }
+
+        public void OnDiferentPath(Node[] newPath, bool pathSuccessful)
+        {
+            if (newPath.Length > 0)
+            {
+                Cell destination = GameManager.Instance.board.getCell(newPath[0].gridY, newPath[0].gridX);
+
+                GameManager.Instance.board.MoveTroop(actualTroop, destination);
+            }
         }
 
     }

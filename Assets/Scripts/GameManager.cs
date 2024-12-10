@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -41,6 +42,11 @@ public class GameManager : MonoBehaviour
     //Private al terminar
     public List<Troop> playerTroops;
     public List<Troop> enemyTroops;
+
+    //Canvas
+    [SerializeField] GameObject lose;
+    [SerializeField] GameObject win;
+    [SerializeField] GameObject tie;
 
     private void Awake()
     {
@@ -129,12 +135,34 @@ public class GameManager : MonoBehaviour
         playerCellCounter.DisplayValue(board.GetColorCellAmount(Team.Blue));
         enemyCellCounter.DisplayValue(board.GetColorCellAmount(Team.Red));
     }
+    public void LoseGame()
+    {
+        lose.SetActive(true);
+    }
+    public void WinGame()
+    {
+        win.SetActive(true);
+    }
+    public void TieGame()
+    {
+        tie.SetActive(true);
+    }
 
     public void ChangeTurn()
     {
         yourTurn = !yourTurn;
        
-        //board.GetColorCellAmount(Team.Red);
+        int red = board.GetColorCellAmount(Team.Red);
+        int blue = board.GetColorCellAmount(Team.Red);
+        if (turn >= 20)
+        {
+            if (red > blue)
+                LoseGame();
+            else if (red < blue)
+                WinGame();
+            else
+                TieGame();
+        }
 
         if (yourTurn) {
             //turnText.text = "Es tu turno";
@@ -142,7 +170,6 @@ public class GameManager : MonoBehaviour
             playerCoins += coinsRound + playerTroops.Count;
             playerCoins = Mathf.Clamp(playerCoins, 0, maxCoins);
             playerCounter.DisplayValue(playerCoins);
-            turn++;
         }
         else {
             //turnText.text = "Es el turno enemigo";
@@ -152,12 +179,21 @@ public class GameManager : MonoBehaviour
             enemyCounter.DisplayValue(enemyCoins);
 
         }
+        turn++;
         board.ActualizeInfluence();
         ResetActions();
     }
 
     public void UseAction()
     {
+        int red = board.GetColorCellAmount(Team.Red);
+        int blue = board.GetColorCellAmount(Team.Red);
+
+        if (red <= 0)
+            WinGame();
+        if (blue <= 0)
+            LoseGame();
+
         //Compruebas que hay amount de ambos colores
         actions--;
         board.ActualizeInfluence();
