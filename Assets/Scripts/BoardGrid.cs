@@ -104,15 +104,26 @@ public class BoardGrid : MonoBehaviour
             for (int col = 0; col < columns; col++)
             {
                 Team thisCellTeam = cells[row, col].GetColorTeam();
-                int value = 0;
+                float value = 0;
                 if (thisCellTeam != Team.None)
                 {
                     if (cells[row, col].transform.childCount > 0)
+                    {
                         if (thisCellTeam == Team.Blue)
                             value = 1;
                         else
                             value = -1;
-                    TroopInfluence(row, col, value);
+                        TroopInfluence(row, col, value);
+                    }
+                        
+                    else
+                    {
+                        if (thisCellTeam == Team.Blue)
+                            value = 0.5f;
+                        else
+                            value = -0.5f;
+                    }
+                    
                 }
                 influenceMap[row, col] += value;
                 sumaMapaInfluencia += value;
@@ -125,11 +136,11 @@ public class BoardGrid : MonoBehaviour
             {
                 line += " / " + influenceMap[row, col].ToString();
             }
-            //Debug.Log(line);
+            Debug.Log(line);
         }
     }
 
-    void TroopInfluence(int row, int col, int value)
+    void TroopInfluence(int row, int col, float value)
     {
         for (int nRow = row - 2; nRow <= row + 2; nRow++)
             for (int nCol = col - 2; nCol <= col + 2; nCol++)
